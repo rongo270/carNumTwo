@@ -28,4 +28,11 @@ class SettingsStorage(context: Context) {
     fun saveLanguage(language: String) {
         prefs.edit().putString(PrefsKeys.LANGUAGE, language).apply()
     }
+
+    fun saveTiming(tickMs: Long, spawnMs: Long) {
+        prefs.edit()
+            .putLong(PrefsKeys.TICK_MS, tickMs)
+            .putLong(PrefsKeys.SPAWN_MS, spawnMs)
+            .apply()
+    }
 }
