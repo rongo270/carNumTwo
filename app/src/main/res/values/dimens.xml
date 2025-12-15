@@ -1,2 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <dimen name="pad_screen">20dp</dimen>
+    <dimen name="pad_card">16dp</dimen>
+
+    <dimen name="text_title">22sp</dimen>
+    <dimen name="text_button">16sp</dimen>
+
+    <dimen name="btn_height">52dp</dimen>
+    <dimen name="corner">16dp</dimen>
+</resources>

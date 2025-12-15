@@ -12,12 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarNumTwo"
         tools:targetApi="31">
-        <activity android:name=".feature.menu.StartMenuActivity">
+        <activity
+            android:name=".feature.menu.StartMenuActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
 
         <activity android:name=".feature.settings.SettingsActivity" />
         <activity android:name=".feature.game.GameActivity" />

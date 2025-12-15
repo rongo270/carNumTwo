@@ -1,2 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="app_name">תרנגולות בחלל</string>
+
+    <string name="menu_title">תפריט ראשי</string>
+    <string name="btn_start">התחלה</string>
+    <string name="btn_settings">הגדרות</string>
+    <string name="btn_score">ניקוד</string>
+    <string name="btn_exit">יציאה</string>
+
+    <string name="toast_score_coming_soon">מסך הניקוד יתווסף בקרוב</string>
+
+    <string name="lang_toggle">שפה</string>
+    <string name="lang_en">אנגלית</string>
+    <string name="lang_he">עברית</string>
+</resources>
