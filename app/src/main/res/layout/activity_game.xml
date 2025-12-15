@@ -1,4 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/game_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:layoutDirection="ltr"
+    android:padding="16dp"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layoutDirection="ltr"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/btn_pause"
+            android:layout_width="@dimen/top_icon_size"
+            android:layout_height="@dimen/top_icon_size"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_pause" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:id="@+id/hearts_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layoutDirection="ltr">
+
+            <ImageView
+                android:id="@+id/heart_1"
+                android:layout_width="@dimen/heart_size"
+                android:layout_height="@dimen/heart_size"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/ic_heart_full" />
+
+            <ImageView
+                android:id="@+id/heart_2"
+                android:layout_width="@dimen/heart_size"
+                android:layout_height="@dimen/heart_size"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/ic_heart_full" />
+
+            <ImageView
+                android:id="@+id/heart_3"
+                android:layout_width="@dimen/heart_size"
+                android:layout_height="@dimen/heart_size"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/ic_heart_full" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/grid_host"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:layoutDirection="ltr">
+
+        <GridLayout
+            android:id="@+id/game_grid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layoutDirection="ltr"
+            android:layout_gravity="center"
+            android:useDefaultMargins="false"
+            android:alignmentMode="alignMargins" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layoutDirection="ltr"
+        android:gravity="center"
+        android:layout_marginBottom="@dimen/controls_bottom_margin">
+
+        <ImageButton
+            android:id="@+id/btn_left"
+            android:layout_width="@dimen/control_button_size"
+            android:layout_height="@dimen/control_button_size"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_left"
+            android:contentDescription="@string/app_name" />
+
+        <View
+            android:layout_width="@dimen/controls_gap"
+            android:layout_height="1dp"/>
+
+        <ImageButton
+            android:id="@+id/btn_right"
+            android:layout_width="@dimen/control_button_size"
+            android:layout_height="@dimen/control_button_size"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_right"
+            android:contentDescription="@string/app_name" />
+    </LinearLayout>
+
+</LinearLayout>

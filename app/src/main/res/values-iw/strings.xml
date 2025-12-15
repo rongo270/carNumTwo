@@ -1,4 +1,6 @@
 <resources>
+    <string name="app_name">chicken</string>
+
     <string name="menu_title">תפריט ראשי</string>
     <string name="btn_start">התחלה</string>
     <string name="btn_settings">הגדרות</string>
