@@ -1,15 +1,20 @@
 <resources>
-    <string name="app_name">תרנגולות בחלל</string>
-
     <string name="menu_title">תפריט ראשי</string>
     <string name="btn_start">התחלה</string>
     <string name="btn_settings">הגדרות</string>
     <string name="btn_score">ניקוד</string>
     <string name="btn_exit">יציאה</string>
 
-    <string name="toast_score_coming_soon">מסך הניקוד יתווסף בקרוב</string>
+    <string name="language_label">שפה</string>
+    <string name="score_coming_soon">מסך הניקוד יתווסף בקרוב</string>
 
-    <string name="lang_toggle">שפה</string>
-    <string name="lang_en">אנגלית</string>
-    <string name="lang_he">עברית</string>
+    <string name="settings_title">הגדרות</string>
+    <string name="grid_size_title">גודל לוח</string>
+    <string name="grid_x">X (עמודות)</string>
+    <string name="grid_y">Y (שורות)</string>
+    <string name="apply">שמירה</string>
+    <string name="saved">נשמר</string>
+
+    <string name="summary_grid">לוח: %1$d x %2$d</string>
+    <string name="summary_speed">טיק: %1$.1fs | יצירה: %2$.1fs</string>
 </resources>

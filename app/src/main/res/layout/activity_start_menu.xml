@@ -6,27 +6,70 @@
     android:orientation="vertical"
     android:padding="20dp">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/menu_title"
+        android:textStyle="bold"
+        android:textSize="22sp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/language_label"/>
+
+        <Button
+            android:id="@+id/btn_language"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EN/HE"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_summary_grid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Grid:" />
+
+    <TextView
+        android:id="@+id/tv_summary_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Speed:" />
+
     <Button
         android:id="@+id/btn_start"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Start"/>
+        android:layout_marginTop="18dp"
+        android:text="@string/btn_start"/>
 
     <Button
         android:id="@+id/btn_settings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Settings"/>
+        android:layout_marginTop="10dp"
+        android:text="@string/btn_settings"/>
 
     <Button
         android:id="@+id/btn_score"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Score"/>
+        android:layout_marginTop="10dp"
+        android:text="@string/btn_score"/>
 
     <Button
         android:id="@+id/btn_exit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Exit"/>
+        android:layout_marginTop="10dp"
+        android:text="@string/btn_exit"/>
 </LinearLayout>
