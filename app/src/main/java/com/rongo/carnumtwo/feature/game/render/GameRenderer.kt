@@ -14,6 +14,7 @@ class GameRenderer(
 
     fun render(state: GameState) {
         clearAllCells()
+        renderBullets(state)
         renderChickens(state)
         renderPlayer(state)
     }
@@ -23,6 +24,14 @@ class GameRenderer(
             for (c in 0 until cols) {
                 cells[r][c].alpha = 1f
                 cells[r][c].setImageDrawable(null)
+            }
+        }
+    }
+
+    private fun renderBullets(state: GameState) {
+        for (b in state.bullets) {
+            if (b.row in 0 until rows && b.col in 0 until cols) {
+                cells[b.row][b.col].setImageResource(R.drawable.ic_bullet)
             }
         }
     }

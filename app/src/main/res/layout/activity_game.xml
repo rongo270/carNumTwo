@@ -9,7 +9,6 @@
     android:padding="16dp"
     android:background="@color/bg">
 
-    <!-- Top bar: pause left, score center, hearts right -->
     <LinearLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
@@ -66,7 +65,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Grid host -->
     <FrameLayout
         android:id="@+id/grid_host"
         android:layout_width="match_parent"
@@ -86,7 +84,7 @@
             android:alignmentMode="alignMargins" />
     </FrameLayout>
 
-    <!-- Controls -->
+    <!-- Controls: Left / Shoot / Right -->
     <LinearLayout
         android:id="@+id/controls"
         android:layout_width="match_parent"
@@ -105,7 +103,19 @@
             android:contentDescription="@string/app_name" />
 
         <View
-            android:layout_width="@dimen/controls_gap"
+            android:layout_width="18dp"
+            android:layout_height="1dp"/>
+
+        <ImageButton
+            android:id="@+id/btn_fire"
+            android:layout_width="@dimen/control_button_size"
+            android:layout_height="@dimen/control_button_size"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_fire"
+            android:contentDescription="@string/app_name" />
+
+        <View
+            android:layout_width="18dp"
             android:layout_height="1dp"/>
 
         <ImageButton

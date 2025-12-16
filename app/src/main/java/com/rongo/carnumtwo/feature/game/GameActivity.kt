@@ -21,6 +21,7 @@ import com.rongo.carnumtwo.R
 import com.rongo.carnumtwo.core.config.GameDefaults
 import com.rongo.carnumtwo.core.storage.SettingsStorage
 import com.rongo.carnumtwo.core.ui.BaseLocalizedActivity
+import com.rongo.carnumtwo.feature.game.engine.BulletManager
 import com.rongo.carnumtwo.feature.game.engine.GameController
 import com.rongo.carnumtwo.feature.game.engine.GameLoop
 import com.rongo.carnumtwo.feature.game.engine.GameUiCallbacks
@@ -36,6 +37,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     private lateinit var grid: GridLayout
     private lateinit var btnLeft: ImageButton
     private lateinit var btnRight: ImageButton
+    private lateinit var btnFire: ImageButton
     private lateinit var btnPause: ImageButton
 
     private lateinit var tvScore: TextView
@@ -60,6 +62,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         grid = findViewById(R.id.game_grid)
         btnLeft = findViewById(R.id.btn_left)
         btnRight = findViewById(R.id.btn_right)
+        btnFire = findViewById(R.id.btn_fire)
         btnPause = findViewById(R.id.btn_pause)
 
         tvScore = findViewById(R.id.tv_score)
@@ -81,17 +84,25 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             lives = 3,
             score = 0,
             invulnerableUntilMs = 0L,
-            chickens = mutableListOf()
+            chickens = mutableListOf(),
+            bullets = mutableListOf(),
+            lastShotAtMs = 0L
         )
 
         setupGrid(cols, rows)
 
         renderer = GameRenderer(cells, rows, cols)
+
+        val bulletManager = BulletManager(
+            shotCooldownMs = 200L
+        )
+
         controller = GameController(
             state = state,
             renderer = renderer,
             ui = this,
-            invulnerableMs = GameDefaults.INVULNERABLE_MS
+            invulnerableMs = GameDefaults.INVULNERABLE_MS,
+            bulletManager = bulletManager
         )
         controller.init()
 
@@ -104,6 +115,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
+        btnFire.setOnClickListener { controller.shoot() }
 
         btnPause.setOnClickListener { togglePauseByUser() }
         updatePauseIcon()
@@ -111,17 +123,13 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
     override fun onPause() {
         super.onPause()
-        // Auto-pause when app goes to background
         if (!controller.isPaused()) controller.setPaused(true)
         updatePauseIcon()
-
-        // Stop scheduling to save resources while in background
         loop.stop()
     }
 
     override fun onResume() {
         super.onResume()
-        // Resume scheduling, but game remains paused until user presses play
         if (!gameOverShown) loop.start()
         updatePauseIcon()
         renderer.render(state)
@@ -204,8 +212,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
     }
-
-    // GameUiCallbacks
 
     override fun updateHearts(lives: Int) {
         val full = R.drawable.ic_heart_full

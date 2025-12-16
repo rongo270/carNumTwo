@@ -18,7 +18,8 @@ class GameController(
     private val state: GameState,
     private val renderer: GameRenderer,
     private val ui: GameUiCallbacks,
-    private val invulnerableMs: Long
+    private val invulnerableMs: Long,
+    private val bulletManager: BulletManager
 ) {
 
     fun init() {
@@ -39,10 +40,20 @@ class GameController(
         state.score = 0
         state.invulnerableUntilMs = 0L
         state.chickens.clear()
+        state.bullets.clear()
+        state.lastShotAtMs = 0L
         state.playerCol = state.cols / 2
 
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
+        renderer.render(state)
+    }
+
+    fun shoot() {
+        if (state.paused) return
+        bulletManager.tryShoot(state) {
+            // No score bonus yet (easy to add later)
+        }
         renderer.render(state)
     }
 
@@ -67,6 +78,12 @@ class GameController(
     fun onTick() {
         if (state.paused) return
 
+        // 1) Move bullets first
+        bulletManager.moveBulletsOneStep(state) {
+            // No score bonus yet (easy to add later)
+        }
+
+        // 2) Move chickens down
         val bottomRow = state.rows - 1
         val now = SystemClock.uptimeMillis()
 
@@ -75,12 +92,21 @@ class GameController(
             val ch = it.next()
             ch.row += 1
 
+            // Fell off board
             if (ch.row >= state.rows) {
                 it.remove()
                 continue
             }
 
-            // Collision by falling onto the spaceship cell
+            // FIX: If chicken moved into a cell that currently has a bullet, remove both
+            val bulletIdx = state.bullets.indexOfFirst { b -> b.row == ch.row && b.col == ch.col }
+            if (bulletIdx != -1) {
+                state.bullets.removeAt(bulletIdx)
+                it.remove()
+                continue
+            }
+
+            // Collision with ship
             if (ch.row == bottomRow && ch.col == state.playerCol) {
                 it.remove()
                 handleHit(now)
@@ -127,12 +153,7 @@ class GameController(
     }
 
     private fun handleHit(now: Long) {
-        // Chicken already removed by caller
-
-        if (state.isInvulnerable(now)) {
-            // No life loss during invulnerability
-            return
-        }
+        if (state.isInvulnerable(now)) return
 
         state.lives -= 1
         ui.updateHearts(state.lives)
