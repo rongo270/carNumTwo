@@ -14,27 +14,21 @@ class GameLoop(
 
     private val tickRunnable = object : Runnable {
         override fun run() {
-            if (!controller.isPaused()) {
-                controller.onTick()
-            }
+            if (!controller.isPaused()) controller.onTick()
             handler.postDelayed(this, tickMs)
         }
     }
 
     private val spawnRunnable = object : Runnable {
         override fun run() {
-            if (!controller.isPaused()) {
-                controller.onSpawn()
-            }
+            if (!controller.isPaused()) controller.onSpawn()
             handler.postDelayed(this, spawnMs)
         }
     }
 
     private val scoreRunnable = object : Runnable {
         override fun run() {
-            if (!controller.isPaused()) {
-                controller.onScoreTick()
-            }
+            if (!controller.isPaused()) controller.onScoreTick()
             handler.postDelayed(this, 1000L)
         }
     }

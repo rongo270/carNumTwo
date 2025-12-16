@@ -29,5 +29,8 @@
     <string name="exit">יציאה</string>
 
     <string name="hit_toast">אאוץ׳! פגיעה!</string>
+    <string name="speed_title">מהירות</string>
+    <string name="tick_label">טיק (צעד נפילה)</string>
+    <string name="spawn_label">יצירה</string>
 
 </resources>

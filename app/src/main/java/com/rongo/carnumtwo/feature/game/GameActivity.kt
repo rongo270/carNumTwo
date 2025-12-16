@@ -50,6 +50,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     private lateinit var state: GameState
     private lateinit var cells: Array<Array<ImageView>>
 
+    private var gameOverShown = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
@@ -110,10 +112,19 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     override fun onPause() {
         super.onPause()
         // Auto-pause when app goes to background
-        if (!controller.isPaused()) {
-            controller.setPaused(true)
-            updatePauseIcon()
-        }
+        if (!controller.isPaused()) controller.setPaused(true)
+        updatePauseIcon()
+
+        // Stop scheduling to save resources while in background
+        loop.stop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Resume scheduling, but game remains paused until user presses play
+        if (!gameOverShown) loop.start()
+        updatePauseIcon()
+        renderer.render(state)
     }
 
     override fun onDestroy() {
@@ -124,7 +135,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     private fun togglePauseByUser() {
         controller.setPaused(!controller.isPaused())
         updatePauseIcon()
-        // Render so blinking/positions stay consistent when pausing
         renderer.render(state)
     }
 
@@ -147,7 +157,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         grid.rowCount = rows
 
         cells = Array(rows) { r ->
-            Array(cols) { c ->
+            Array(cols) {
                 val cell = AppCompatImageView(this)
                 cell.scaleType = ImageView.ScaleType.FIT_CENTER
                 cell.setBackgroundResource(R.drawable.bg_cell)
@@ -181,7 +191,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
             val contentW = cols * cellSize + cols * margin * 2
             val contentH = rows * cellSize + rows * margin * 2
-
             val padX = max(0, (grid.width - contentW) / 2)
             val padY = max(0, (grid.height - contentH) / 2)
 
@@ -220,8 +229,9 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         val durationMs = 120L
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vm = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            val vib = vm.defaultVibrator
-            vib.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+            vm.defaultVibrator.vibrate(
+                VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE)
+            )
         } else {
             @Suppress("DEPRECATION")
             val vib = getSystemService(VIBRATOR_SERVICE) as Vibrator
@@ -235,6 +245,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     }
 
     override fun showGameOverDialog(finalScore: Int) {
+        gameOverShown = true
         loop.stop()
 
         AlertDialog.Builder(this)
@@ -242,6 +253,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             .setMessage(getString(R.string.game_over_message, finalScore))
             .setCancelable(false)
             .setPositiveButton(getString(R.string.restart)) { _, _ ->
+                gameOverShown = false
                 controller.resetGame()
                 loop.start()
                 updatePauseIcon()

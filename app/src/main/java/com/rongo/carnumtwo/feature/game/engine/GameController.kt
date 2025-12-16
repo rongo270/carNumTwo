@@ -70,13 +70,11 @@ class GameController(
         val bottomRow = state.rows - 1
         val now = SystemClock.uptimeMillis()
 
-        // Move chickens down
         val it = state.chickens.iterator()
         while (it.hasNext()) {
             val ch = it.next()
             ch.row += 1
 
-            // Fell off board
             if (ch.row >= state.rows) {
                 it.remove()
                 continue
@@ -95,7 +93,6 @@ class GameController(
     fun onSpawn() {
         if (state.paused) return
 
-        // Spawn at top row with a simple "avoid same cell at row 0" rule
         val occupiedTop = BooleanArray(state.cols)
         for (ch in state.chickens) {
             if (ch.row == 0 && ch.col in 0 until state.cols) {
@@ -104,12 +101,8 @@ class GameController(
         }
 
         val freeCols = mutableListOf<Int>()
-        for (c in 0 until state.cols) {
-            if (!occupiedTop[c]) freeCols.add(c)
-        }
-        if (freeCols.isEmpty()) {
-            return
-        }
+        for (c in 0 until state.cols) if (!occupiedTop[c]) freeCols.add(c)
+        if (freeCols.isEmpty()) return
 
         val col = freeCols[Random.nextInt(freeCols.size)]
         state.chickens.add(Chicken(row = 0, col = col))
@@ -134,7 +127,7 @@ class GameController(
     }
 
     private fun handleHit(now: Long) {
-        // Chicken always disappears (already removed by caller)
+        // Chicken already removed by caller
 
         if (state.isInvulnerable(now)) {
             // No life loss during invulnerability
@@ -145,7 +138,6 @@ class GameController(
         ui.updateHearts(state.lives)
         ui.showHitFeedback()
 
-        // Start invulnerability
         state.invulnerableUntilMs = now + invulnerableMs
 
         if (state.lives <= 0) {

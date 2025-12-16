@@ -29,5 +29,9 @@
     <string name="exit">Exit</string>
 
     <string name="hit_toast">Ouch! Hit!</string>
+    <string name="speed_title">Speed</string>
+    <string name="tick_label">Tick (fall step)</string>
+    <string name="spawn_label">Spawn</string>
+
 
 </resources>
