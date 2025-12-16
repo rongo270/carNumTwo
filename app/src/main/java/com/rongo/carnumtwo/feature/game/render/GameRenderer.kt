@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.feature.game.render
 
 import android.os.SystemClock
@@ -13,10 +12,11 @@ class GameRenderer(
     private val cols: Int
 ) {
 
+    // Render the current state into the grid cells
     fun render(state: GameState) {
         val now = SystemClock.uptimeMillis()
 
-        // Clear board
+        // Clear the board (reset images and alpha)
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 val cell = cells[r][c]
@@ -43,7 +43,7 @@ class GameRenderer(
             }
         }
 
-        // Draw player with smooth fade during invulnerability
+        // Draw player ship, with fade effect during invulnerability
         val bottomRow = rows - 1
         if (bottomRow in 0 until rows && state.playerCol in 0 until cols) {
             val shipCell = cells[bottomRow][state.playerCol]
@@ -56,6 +56,7 @@ class GameRenderer(
         }
     }
 
+    // Compute player alpha based on invulnerability window (fade out then in)
     private fun playerAlpha(
         nowMs: Long,
         invulnerableUntilMs: Long,
@@ -68,7 +69,7 @@ class GameRenderer(
 
         val t = ((nowMs - startMs).toFloat() / invulnerableMs.toFloat()).coerceIn(0f, 1f)
 
-        // Smooth fade-out then fade-in over the whole invulnerable window
+        // Fade down to min alpha, then back to full alpha
         val minAlpha = 0.25f
         return if (t < 0.5f) {
             val k = t / 0.5f

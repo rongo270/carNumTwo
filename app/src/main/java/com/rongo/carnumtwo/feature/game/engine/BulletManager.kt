@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.feature.game.engine
 
 import android.os.SystemClock
@@ -9,6 +8,7 @@ class BulletManager(
     private val shotCooldownMs: Long
 ) {
 
+    // Try to shoot a bullet if cooldown allows
     fun tryShoot(state: GameState, onChickenHit: () -> Unit) {
         if (state.paused) return
 
@@ -16,12 +16,13 @@ class BulletManager(
         if (now - state.lastShotAtMs < shotCooldownMs) return
         state.lastShotAtMs = now
 
+        // Bullet starts one row above the ship
         val startRow = state.rows - 2
         if (startRow < 0) return
 
         val col = state.playerCol
 
-        // If a chicken is directly above the ship, remove it immediately (no bullet needed)
+        // If chicken is directly above, remove it instantly
         val chickenIdx = findChickenIndex(state, startRow, col)
         if (chickenIdx != -1) {
             state.chickens.removeAt(chickenIdx)
@@ -29,13 +30,14 @@ class BulletManager(
             return
         }
 
-        // Avoid stacking bullets in the same cell
+        // Prevent multiple bullets in the same starting cell
         val hasBullet = state.bullets.any { it.row == startRow && it.col == col }
         if (hasBullet) return
 
         state.bullets.add(Bullet(row = startRow, col = col))
     }
 
+    // Move each bullet up by one cell and handle hits/off-board
     fun moveBulletsOneStep(state: GameState, onChickenHit: () -> Unit) {
         if (state.paused) return
 
@@ -44,13 +46,13 @@ class BulletManager(
             val b = it.next()
             val nextRow = b.row - 1
 
-            // Off the board
+            // Remove bullet if it leaves the board
             if (nextRow < 0) {
                 it.remove()
                 continue
             }
 
-            // Hit chicken in the next cell (covers "crossing" cases cleanly because bullets move first)
+            // If bullet hits a chicken in the next cell, remove both
             val chickenIdx = findChickenIndex(state, nextRow, b.col)
             if (chickenIdx != -1) {
                 state.chickens.removeAt(chickenIdx)
@@ -59,11 +61,12 @@ class BulletManager(
                 continue
             }
 
-            // Move bullet up
+            // Apply the movement
             b.row = nextRow
         }
     }
 
+    // Find a chicken index at a given cell (row, col)
     private fun findChickenIndex(state: GameState, row: Int, col: Int): Int {
         return state.chickens.indexOfFirst { it.row == row && it.col == col }
     }

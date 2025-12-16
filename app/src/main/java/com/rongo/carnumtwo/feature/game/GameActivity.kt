@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.feature.game
 
 import android.content.Intent
@@ -57,8 +56,10 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Inflate the game screen layout
         setContentView(R.layout.activity_game)
 
+        // Bind views
         root = findViewById(R.id.game_root)
         grid = findViewById(R.id.game_grid)
         btnLeft = findViewById(R.id.btn_left)
@@ -71,12 +72,15 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
 
+        // Apply safe padding for system bars
         applyBottomInsetsToRoot()
 
+        // Load settings for grid and speeds
         val settings = SettingsStorage(this).load()
         val cols = settings.gridX
         val rows = settings.gridY
 
+        // Create initial game state
         state = GameState(
             cols = cols,
             rows = rows,
@@ -90,14 +94,18 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             lastShotAtMs = 0L
         )
 
+        // Build the grid UI
         setupGrid(cols, rows)
 
+        // Renderer draws state into the grid
         renderer = GameRenderer(cells, rows, cols)
 
+        // Bullet manager handles shooting and bullet movement
         val bulletManager = BulletManager(
             shotCooldownMs = 200L
         )
 
+        // Controller updates the state and calls render/UI callbacks
         controller = GameController(
             state = state,
             renderer = renderer,
@@ -107,6 +115,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         )
         controller.init()
 
+        // Game loop triggers ticks/spawns/score updates
         loop = GameLoop(
             tickMs = settings.tickMs,
             spawnMs = settings.spawnMs,
@@ -114,16 +123,19 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         )
         loop.start()
 
+        // Player controls
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
         btnFire.setOnClickListener { controller.shoot() }
 
+        // Pause control
         btnPause.setOnClickListener { togglePauseByUser() }
         updatePauseIcon()
     }
 
     override fun onPause() {
         super.onPause()
+        // Pause gameplay when app goes to background
         if (!controller.isPaused()) controller.setPaused(true)
         updatePauseIcon()
         loop.stop()
@@ -131,6 +143,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
     override fun onResume() {
         super.onResume()
+        // Resume loop when returning (unless game over dialog is shown)
         if (!gameOverShown) loop.start()
         updatePauseIcon()
         renderer.render(state)
@@ -138,19 +151,23 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
     override fun onDestroy() {
         super.onDestroy()
+        // Stop loop to avoid callbacks after activity is destroyed
         loop.stop()
     }
 
+    // Toggle pause when user presses the pause/play button
     private fun togglePauseByUser() {
         controller.setPaused(!controller.isPaused())
         updatePauseIcon()
         renderer.render(state)
     }
 
+    // Update pause button icon based on current paused state
     private fun updatePauseIcon() {
         btnPause.setImageResource(if (controller.isPaused()) R.drawable.ic_play else R.drawable.ic_pause)
     }
 
+    // Add bottom inset padding so controls are not hidden by system navigation bar
     private fun applyBottomInsetsToRoot() {
         val baseBottom = root.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -160,11 +177,13 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         }
     }
 
+    // Create grid cells and size them to fit the available space
     private fun setupGrid(cols: Int, rows: Int) {
         grid.removeAllViews()
         grid.columnCount = cols
         grid.rowCount = rows
 
+        // Create cell ImageViews
         cells = Array(rows) { r ->
             Array(cols) {
                 val cell = AppCompatImageView(this)
@@ -175,6 +194,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             }
         }
 
+        // Size cells after the grid is measured
         grid.post {
             val margin = dpToPx(6)
 
@@ -185,6 +205,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             val cellSizeByH = if (rows > 0) availableH / rows else 0
             val cellSize = max(1, min(cellSizeByW, cellSizeByH))
 
+            // Apply layout params for each cell
             for (r in 0 until rows) {
                 for (c in 0 until cols) {
                     val lp = GridLayout.LayoutParams().apply {
@@ -198,6 +219,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
                 }
             }
 
+            // Center the grid content inside the GridLayout
             val contentW = cols * cellSize + cols * margin * 2
             val contentH = rows * cellSize + rows * margin * 2
             val padX = max(0, (grid.width - contentW) / 2)
@@ -210,25 +232,30 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         }
     }
 
+    // Convert dp to px for consistent sizing across devices
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
+    // Update heart icons based on remaining lives
     override fun updateHearts(lives: Int) {
         setHeart(heart1, lives >= 1)
         setHeart(heart2, lives >= 2)
         setHeart(heart3, lives >= 3)
     }
 
+    // Set a heart to full or dimmed based on alive/dead state
     private fun setHeart(view: ImageView, isAlive: Boolean) {
         view.setImageResource(R.drawable.ic_heart_full)
         view.alpha = if (isAlive) 1f else 0.25f
     }
 
+    // Update the score label text
     override fun updateScore(score: Int) {
         tvScore.text = getString(R.string.score_label, score)
     }
 
+    // Show feedback when the player gets hit (toast + vibration)
     override fun showHitFeedback() {
         val toast = Toast.makeText(this, getString(R.string.hit_toast), Toast.LENGTH_SHORT)
         toast.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, computeTopToastYOffset())
@@ -236,12 +263,14 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         vibrateHit()
     }
 
+    // Compute toast Y offset so it appears below the status bar
     private fun computeTopToastYOffset(): Int {
         val insets = ViewCompat.getRootWindowInsets(root)
         val topInset = insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.top ?: 0
         return topInset + dpToPx(72)
     }
 
+    // Vibrate the phone shortly for hit feedback
     private fun vibrateHit() {
         val durationMs = 120L
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -261,6 +290,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         }
     }
 
+    // Show game-over dialog with options to restart, go home, or exit
     override fun showGameOverDialog(finalScore: Int) {
         gameOverShown = true
         loop.stop()
@@ -270,16 +300,19 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             .setMessage(getString(R.string.game_over_message, finalScore))
             .setCancelable(false)
             .setPositiveButton(getString(R.string.restart)) { _, _ ->
+                // Restart the game
                 gameOverShown = false
                 controller.resetGame()
                 loop.start()
                 updatePauseIcon()
             }
             .setNeutralButton(getString(R.string.home)) { _, _ ->
+                // Go back to main menu
                 startActivity(Intent(this, StartMenuActivity::class.java))
                 finish()
             }
             .setNegativeButton(getString(R.string.exit)) { _, _ ->
+                // Exit the app
                 finishAffinity()
             }
             .show()

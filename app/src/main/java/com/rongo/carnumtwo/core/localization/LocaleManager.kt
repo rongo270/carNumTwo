@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.core.localization
 
 import android.content.Context

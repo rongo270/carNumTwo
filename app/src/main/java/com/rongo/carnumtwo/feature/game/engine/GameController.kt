@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.feature.game.engine
 
 import android.os.SystemClock
@@ -22,18 +21,22 @@ class GameController(
     private val bulletManager: BulletManager
 ) {
 
+    // Initialize UI and render the starting state
     fun init() {
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         renderer.render(state)
     }
 
+    // Return whether the game is currently paused
     fun isPaused(): Boolean = state.paused
 
+    // Set paused state (used by UI and loop)
     fun setPaused(paused: Boolean) {
         state.paused = paused
     }
 
+    // Reset the game state back to the initial values
     fun resetGame() {
         state.paused = false
         state.lives = 3
@@ -49,14 +52,16 @@ class GameController(
         renderer.render(state)
     }
 
+    // Handle shoot button click
     fun shoot() {
         if (state.paused) return
         bulletManager.tryShoot(state) {
-            // No score bonus yet (easy to add later)
+            // Chicken removed by shot (score logic can be added later)
         }
         renderer.render(state)
     }
 
+    // Move the player one cell left (if possible)
     fun moveLeft() {
         if (state.paused) return
         if (state.playerCol > 0) {
@@ -66,6 +71,7 @@ class GameController(
         }
     }
 
+    // Move the player one cell right (if possible)
     fun moveRight() {
         if (state.paused) return
         if (state.playerCol < state.cols - 1) {
@@ -75,12 +81,13 @@ class GameController(
         }
     }
 
+    // Called by the loop each "tick" to update gameplay
     fun onTick() {
         if (state.paused) return
 
         // 1) Move bullets first
         bulletManager.moveBulletsOneStep(state) {
-            // No score bonus yet (easy to add later)
+            // Chicken removed by bullet movement (score logic can be added later)
         }
 
         // 2) Move chickens down
@@ -92,13 +99,13 @@ class GameController(
             val ch = it.next()
             ch.row += 1
 
-            // Fell off board
+            // Remove chicken if it goes off the board
             if (ch.row >= state.rows) {
                 it.remove()
                 continue
             }
 
-            // FIX: If chicken moved into a cell that currently has a bullet, remove both
+            // If chicken moved into a bullet cell, remove both
             val bulletIdx = state.bullets.indexOfFirst { b -> b.row == ch.row && b.col == ch.col }
             if (bulletIdx != -1) {
                 state.bullets.removeAt(bulletIdx)
@@ -106,7 +113,7 @@ class GameController(
                 continue
             }
 
-            // Collision with ship
+            // If chicken hits the ship, handle hit
             if (ch.row == bottomRow && ch.col == state.playerCol) {
                 it.remove()
                 handleHit(now)
@@ -116,9 +123,11 @@ class GameController(
         renderer.render(state)
     }
 
+    // Called by the loop to spawn a new chicken at the top row
     fun onSpawn() {
         if (state.paused) return
 
+        // Track columns already occupied at row 0
         val occupiedTop = BooleanArray(state.cols)
         for (ch in state.chickens) {
             if (ch.row == 0 && ch.col in 0 until state.cols) {
@@ -126,6 +135,7 @@ class GameController(
             }
         }
 
+        // Pick a random free column at the top
         val freeCols = mutableListOf<Int>()
         for (c in 0 until state.cols) if (!occupiedTop[c]) freeCols.add(c)
         if (freeCols.isEmpty()) return
@@ -136,12 +146,14 @@ class GameController(
         renderer.render(state)
     }
 
+    // Called every second to increase score over time
     fun onScoreTick() {
         if (state.paused) return
         state.score += 1
         ui.updateScore(state.score)
     }
 
+    // Check collision after player movement (player moved into chicken)
     private fun checkCollisionByMovement() {
         val bottomRow = state.rows - 1
         val idx = state.chickens.indexOfFirst { it.row == bottomRow && it.col == state.playerCol }
@@ -152,6 +164,7 @@ class GameController(
         }
     }
 
+    // Handle a player hit (reduce life, set invulnerability, show game over if needed)
     private fun handleHit(now: Long) {
         if (state.isInvulnerable(now)) return
 
@@ -159,8 +172,10 @@ class GameController(
         ui.updateHearts(state.lives)
         ui.showHitFeedback()
 
+        // Start invulnerability window
         state.invulnerableUntilMs = now + invulnerableMs
 
+        // If no lives left, stop and show game over
         if (state.lives <= 0) {
             state.paused = true
             ui.showGameOverDialog(state.score)

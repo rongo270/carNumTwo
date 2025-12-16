@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.feature.game.engine
 
 import android.os.Handler
@@ -12,6 +11,7 @@ class GameLoop(
 
     private val handler = Handler(Looper.getMainLooper())
 
+    // Runs game tick updates (movement/collisions)
     private val tickRunnable = object : Runnable {
         override fun run() {
             if (!controller.isPaused()) controller.onTick()
@@ -19,6 +19,7 @@ class GameLoop(
         }
     }
 
+    // Runs spawn updates (new chickens)
     private val spawnRunnable = object : Runnable {
         override fun run() {
             if (!controller.isPaused()) controller.onSpawn()
@@ -26,6 +27,7 @@ class GameLoop(
         }
     }
 
+    // Runs score updates (once per second)
     private val scoreRunnable = object : Runnable {
         override fun run() {
             if (!controller.isPaused()) controller.onScoreTick()
@@ -33,6 +35,7 @@ class GameLoop(
         }
     }
 
+    // Start the loop (posts all runnables)
     fun start() {
         stop()
         handler.post(tickRunnable)
@@ -40,6 +43,7 @@ class GameLoop(
         handler.post(scoreRunnable)
     }
 
+    // Stop the loop (remove all scheduled callbacks)
     fun stop() {
         handler.removeCallbacksAndMessages(null)
     }

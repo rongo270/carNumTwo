@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.core.storage
 
 import android.content.Context

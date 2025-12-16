@@ -1,4 +1,3 @@
-// English comments only inside code
 package com.rongo.carnumtwo.feature.menu
 
 import android.content.Intent
@@ -20,29 +19,37 @@ class StartMenuActivity : BaseLocalizedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Inflate the start menu layout
         setContentView(R.layout.activity_start_menu)
 
+        // Storage helper for loading settings
         storage = SettingsStorage(this)
 
+        // Bind summary views
         tvSummaryGrid = findViewById(R.id.tv_summary_grid)
         tvSummarySpeed = findViewById(R.id.tv_summary_speed)
 
+        // Start the game
         findViewById<Button>(R.id.btn_start).setOnClickListener {
             startActivity(Intent(this, GameActivity::class.java))
         }
 
+        // Open settings screen
         findViewById<Button>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        // Placeholder score button
         findViewById<Button>(R.id.btn_score).setOnClickListener {
             Toast.makeText(this, getString(R.string.score_coming_soon), Toast.LENGTH_SHORT).show()
         }
 
+        // Exit the app
         findViewById<Button>(R.id.btn_exit).setOnClickListener {
             finishAffinity()
         }
 
+        // Toggle language (en/he) and recreate the activity
         findViewById<Button>(R.id.btn_language).setOnClickListener {
             toggleLanguage()
         }
@@ -50,9 +57,11 @@ class StartMenuActivity : BaseLocalizedActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Refresh summary when returning from other screens
         updateSummary()
     }
 
+    // Update the summary text based on saved settings
     private fun updateSummary() {
         val s = storage.load()
         tvSummaryGrid.text = getString(R.string.summary_grid, s.gridX, s.gridY)
@@ -63,6 +72,7 @@ class StartMenuActivity : BaseLocalizedActivity() {
         )
     }
 
+    // Switch between English and Hebrew and reload UI
     private fun toggleLanguage() {
         val current = storage.load().language
         val next = if (current == "en") "he" else "en"
