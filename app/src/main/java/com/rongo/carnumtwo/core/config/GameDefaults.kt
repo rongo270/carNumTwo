@@ -12,7 +12,8 @@ object GameDefaults {
     const val DEFAULT_TICK_MS = 500L    // Chicken moves down every 0.5s
     const val DEFAULT_SPAWN_MS = 1000L  // New chicken spawns every 1s
 
-    const val INVULNERABLE_MS = 1500L   // Spaceship blink duration
+    const val INVULNERABLE_MS = 3000L
 
     const val DEFAULT_LANGUAGE = "en" // "en" or "he"
+
 }

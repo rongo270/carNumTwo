@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.view.Gravity
 import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageButton
@@ -214,12 +215,14 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     }
 
     override fun updateHearts(lives: Int) {
-        val full = R.drawable.ic_heart_full
-        val empty = R.drawable.ic_heart_empty
+        setHeart(heart1, lives >= 1)
+        setHeart(heart2, lives >= 2)
+        setHeart(heart3, lives >= 3)
+    }
 
-        heart1.setImageResource(if (lives >= 1) full else empty)
-        heart2.setImageResource(if (lives >= 2) full else empty)
-        heart3.setImageResource(if (lives >= 3) full else empty)
+    private fun setHeart(view: ImageView, isAlive: Boolean) {
+        view.setImageResource(R.drawable.ic_heart_full)
+        view.alpha = if (isAlive) 1f else 0.25f
     }
 
     override fun updateScore(score: Int) {
@@ -227,8 +230,16 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     }
 
     override fun showHitFeedback() {
-        Toast.makeText(this, getString(R.string.hit_toast), Toast.LENGTH_SHORT).show()
+        val toast = Toast.makeText(this, getString(R.string.hit_toast), Toast.LENGTH_SHORT)
+        toast.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, computeTopToastYOffset())
+        toast.show()
         vibrateHit()
+    }
+
+    private fun computeTopToastYOffset(): Int {
+        val insets = ViewCompat.getRootWindowInsets(root)
+        val topInset = insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.top ?: 0
+        return topInset + dpToPx(72)
     }
 
     private fun vibrateHit() {

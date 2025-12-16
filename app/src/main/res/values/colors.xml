@@ -1,7 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#0B1020</color>
-    <color name="card">#141B2D</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#B7C0D8</color>
-    <color name="accent">#7C5CFF</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="space_bg_start">#0F2027</color>
+    <color name="space_bg_mid">#203A43</color>
+    <color name="space_bg_end">#2C5364</color>
+
+    <color name="neon_blue">#00F0FF</color>
+    <color name="neon_purple">#BC13FE</color>
+    <color name="neon_pink">#FF0055</color>
+
+    <color name="panel_bg_translucent">#99141B2D</color> <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#80FFFFFF</color>
+    <color name="grid_cell_border">#33FFFFFF</color>
 </resources>

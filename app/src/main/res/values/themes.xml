@@ -5,5 +5,13 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.CarNumTwo" parent="Base.Theme.CarNumTwo" />
+
+    <style name="Theme.CarNumTwo" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/neon_blue</item>
+        <item name="colorPrimaryDark">@color/space_bg_start</item>
+        <item name="colorAccent">@color/neon_pink</item>
+
+        <item name="android:statusBarColor">@color/space_bg_start</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>
