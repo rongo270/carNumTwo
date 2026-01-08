@@ -16,9 +16,9 @@
             android:layout_height="wrap_content"
             android:text="@string/settings_title"
             android:textColor="@color/white"
-            android:textSize="28sp"
+            android:textSize="32sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="32dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:orientation="vertical"
             android:background="@drawable/bg_glass_panel"
             android:padding="20dp"
-            android:layout_marginBottom="20dp">
+            android:layout_marginBottom="24dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -34,7 +34,7 @@
                 android:text="@string/grid_size_title"
                 android:textColor="@color/neon_blue"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:layout_marginBottom="16dp"/>
 
             <LinearLayout
@@ -42,39 +42,90 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="16dp">
+
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/grid_x"
-                    android:textColor="@color/text_primary"/>
-                <NumberPicker
-                    android:id="@+id/np_x"
-                    android:layout_width="wrap_content"
-                    android:layout_height="100dp"
-                    android:background="@color/white" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"/>
+
+                <Button
+                    android:id="@+id/btn_dec_x"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:text="-"
+                    android:textSize="24sp"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_secondary_bg"/>
+
+                <TextView
+                    android:id="@+id/tv_val_x"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="5"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btn_inc_x"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:text="+"
+                    android:textSize="24sp"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_secondary_bg"/>
             </LinearLayout>
 
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#20FFFFFF" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#20FFFFFF" android:layout_marginBottom="16dp"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
+
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/grid_y"
-                    android:textColor="@color/text_primary"/>
-                <NumberPicker
-                    android:id="@+id/np_y"
-                    android:layout_width="wrap_content"
-                    android:layout_height="100dp"
-                    android:background="@color/white" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"/>
+
+                <Button
+                    android:id="@+id/btn_dec_y"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:text="-"
+                    android:textSize="24sp"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_secondary_bg"/>
+
+                <TextView
+                    android:id="@+id/tv_val_y"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="10"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btn_inc_y"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:text="+"
+                    android:textSize="24sp"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_secondary_bg"/>
             </LinearLayout>
+
         </LinearLayout>
 
         <LinearLayout
@@ -83,7 +134,7 @@
             android:orientation="vertical"
             android:background="@drawable/bg_glass_panel"
             android:padding="20dp"
-            android:layout_marginBottom="30dp">
+            android:layout_marginBottom="32dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -91,57 +142,57 @@
                 android:text="@string/speed_title"
                 android:textColor="@color/neon_pink"
                 android:textStyle="bold"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:layout_marginBottom="16dp"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/tick_label"
-                    android:textColor="@color/text_primary"/>
-                <NumberPicker
-                    android:id="@+id/np_tick"
-                    android:layout_width="wrap_content"
-                    android:layout_height="100dp"
-                    android:background="@color/white" />
-            </LinearLayout>
+                android:weightSum="3">
 
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#20FFFFFF" android:layout_marginBottom="12dp"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
+                <Button
+                    android:id="@+id/btn_speed_slow"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:text="@string/spawn_label"
-                    android:textColor="@color/text_primary"/>
-                <NumberPicker
-                    android:id="@+id/np_spawn"
-                    android:layout_width="wrap_content"
-                    android:layout_height="100dp"
-                    android:background="@color/white" />
+                    android:text="@string/speed_slow"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/btn_secondary_bg"
+                    android:textColor="@color/text_secondary"/>
+
+                <Button
+                    android:id="@+id/btn_speed_medium"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="@string/speed_medium"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/btn_secondary_bg"
+                    android:textColor="@color/text_secondary"/>
+
+                <Button
+                    android:id="@+id/btn_speed_fast"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="@string/speed_fast"
+                    android:textSize="14sp"
+                    android:background="@drawable/btn_secondary_bg"
+                    android:textColor="@color/text_secondary"/>
             </LinearLayout>
         </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_apply"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="60dp"
             android:text="@string/apply"
             android:textColor="@color/white"
             android:textStyle="bold"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:background="@drawable/btn_primary_bg" />
 
     </LinearLayout>

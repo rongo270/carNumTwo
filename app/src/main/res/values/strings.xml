@@ -12,10 +12,10 @@
 
     <string name="settings_title">Settings</string>
     <string name="grid_size_title">Grid Size</string>
-    <string name="grid_x">X (columns)</string>
-    <string name="grid_y">Y (rows)</string>
-    <string name="apply">Apply</string>
-    <string name="saved">Saved</string>
+    <string name="grid_x">Columns</string>
+    <string name="grid_y">Rows</string>
+    <string name="apply">Save Settings</string>
+    <string name="saved">Settings Saved!</string>
 
     <string name="summary_grid">Grid: %1$d x %2$d</string>
     <string name="summary_speed">Tick: %1$.1fs | Spawn: %2$.1fs</string>
@@ -29,9 +29,10 @@
     <string name="exit">Exit</string>
 
     <string name="hit_toast">Ouch! Hit!</string>
-    <string name="speed_title">Speed</string>
-    <string name="tick_label">Tick (fall step)</string>
-    <string name="spawn_label">Spawn</string>
+    <string name="speed_title">Game Speed</string>
 
+    <string name="speed_slow">Slow</string>
+    <string name="speed_medium">Medium</string>
+    <string name="speed_fast">Fast</string>
 
 </resources>

@@ -12,10 +12,10 @@
 
     <string name="settings_title">הגדרות</string>
     <string name="grid_size_title">גודל לוח</string>
-    <string name="grid_x">X (עמודות)</string>
-    <string name="grid_y">Y (שורות)</string>
+    <string name="grid_x">עמודות</string>
+    <string name="grid_y">שורות</string>
     <string name="apply">שמירה</string>
-    <string name="saved">נשמר</string>
+    <string name="saved">ההגדרות נשמרו!</string>
 
     <string name="summary_grid">לוח: %1$d x %2$d</string>
     <string name="summary_speed">טיק: %1$.1fs | יצירה: %2$.1fs</string>
@@ -29,8 +29,10 @@
     <string name="exit">יציאה</string>
 
     <string name="hit_toast">אאוץ׳! פגיעה!</string>
-    <string name="speed_title">מהירות</string>
-    <string name="tick_label">טיק (צעד נפילה)</string>
-    <string name="spawn_label">יצירה</string>
+    <string name="speed_title">מהירות משחק</string>
+
+    <string name="speed_slow">איטי</string>
+    <string name="speed_medium">בינוני</string>
+    <string name="speed_fast">מהיר</string>
 
 </resources>
