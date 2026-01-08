@@ -43,4 +43,9 @@
     <string name="audio_title">שמע</string>
     <string name="audio_music">מוזיקה</string>
     <string name="audio_sfx">אפקטים</string>
+
+    <string name="paused">המשחק נעצר</string>
+    <string name="resume">המשך משחק</string>
+    <string name="exit_menu">תפריט ראשי</string>
+    <string name="final_score_label">ניקוד סופי</string>
 </resources>

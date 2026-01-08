@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_card"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/paused"
+        android:textColor="@color/neon_blue"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:shadowColor="@color/neon_purple"
+        android:shadowRadius="10"
+        android:layout_marginBottom="24dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/audio_music"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="4dp"/>
+
+    <SeekBar
+        android:id="@+id/seek_dialog_music"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progressTint="@color/neon_pink"
+        android:thumbTint="@color/white"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/audio_sfx"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="4dp"/>
+
+    <SeekBar
+        android:id="@+id/seek_dialog_sfx"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progressTint="@color/neon_pink"
+        android:thumbTint="@color/white"
+        android:layout_marginBottom="32dp"/>
+
+    <Button
+        android:id="@+id/btn_dialog_resume"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="@string/resume"
+        android:background="@drawable/btn_primary_bg"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btn_dialog_restart"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="@string/restart"
+        android:background="@drawable/btn_secondary_bg"
+        android:textColor="@color/neon_blue"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btn_dialog_exit"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="@string/exit_menu"
+        android:background="@android:color/transparent"
+        android:textColor="@color/text_secondary"/>
+
+</LinearLayout>

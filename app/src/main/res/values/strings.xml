@@ -43,4 +43,9 @@
     <string name="audio_title">Audio</string>
     <string name="audio_music">Music</string>
     <string name="audio_sfx">Sound FX</string>
+
+    <string name="paused">PAUSED</string>
+    <string name="resume">Resume</string>
+    <string name="exit_menu">Main Menu</string>
+    <string name="final_score_label">Final Score</string>
 </resources>
