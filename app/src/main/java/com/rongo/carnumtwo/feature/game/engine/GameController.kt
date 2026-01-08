@@ -12,9 +12,14 @@ import kotlin.random.Random
 interface GameUiCallbacks {
     fun updateHearts(lives: Int)
     fun updateScore(score: Int)
-    fun updateCoins(coins: Int) // New callback for UI
+    fun updateCoins(coins: Int)
     fun showHitFeedback()
     fun showGameOverDialog(finalScore: Int)
+
+    // Audio Callbacks
+    fun playSoundMove()
+    fun playSoundExplosion()
+    fun playSoundCoin()
 }
 
 class GameController(
@@ -22,14 +27,33 @@ class GameController(
     private val renderer: GameRenderer,
     private val ui: GameUiCallbacks,
     private val invulnerableMs: Long,
-    private val bulletManager: BulletManager
+    private val bulletManager: BulletManager,
+    private val initialTickMs: Long // We keep the starting speed reference
 ) {
+
+    // --- Speed Logic ---
+    private var currentTickMs: Long = initialTickMs
+    private val minTickMs: Long = 150L // Cap maximum speed
+
+    // Acceleration Factor:
+    // 0.003 means speed increases by 0.3% per score point.
+    // At score 100, speed is ~1.3x faster.
+    // At score 333, speed is ~2.0x faster (Double speed).
+    // This creates a very smooth, linear difficulty curve.
+    private val accelerationFactor: Float = 0.003f
+
+    private var tickCounter: Int = 0
 
     fun init() {
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         ui.updateCoins(state.coinsCollected)
         renderer.render(state)
+    }
+
+    // Called by GameLoop
+    fun getCurrentTickRate(): Long {
+        return if (state.paused) 100L else currentTickMs
     }
 
     fun isPaused(): Boolean = state.paused
@@ -42,7 +66,7 @@ class GameController(
         state.paused = false
         state.lives = 3
         state.score = 0
-        state.coinsCollected = 0 // Reset coins on full restart
+        state.coinsCollected = 0
         state.invulnerableUntilMs = 0L
         state.chickens.clear()
         state.bullets.clear()
@@ -50,64 +74,100 @@ class GameController(
         state.lastShotAtMs = 0L
         state.playerCol = state.cols / 2
 
+        // Reset speed logic
+        currentTickMs = initialTickMs
+        tickCounter = 0
+
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         ui.updateCoins(state.coinsCollected)
         renderer.render(state)
     }
 
-    fun shoot() {
+    /**
+     * MASTER GAME STEP
+     */
+    fun performGameStep() {
         if (state.paused) return
-        bulletManager.tryShoot(state) {
-            // Logic for hit score if needed
+
+        // 1. Always move objects
+        moveBullets()
+        moveEnemiesAndCoins()
+
+        // 2. Logic every 2 ticks (Spawn & Score)
+        tickCounter++
+        if (tickCounter % 2 == 0) {
+            spawnEnemyOrCoin()
+            increaseScore()
+
+            // Recalculate speed based on new score
+            recalculateSpeed()
         }
+
         renderer.render(state)
     }
 
-    fun moveLeft() {
-        if (state.paused) return
-        if (state.playerCol > 0) {
-            state.playerCol--
-            checkPlayerCollisions()
-            renderer.render(state)
+    // --- Private Logic ---
+
+    // New Formula for Linear Speed Increase
+    private fun recalculateSpeed() {
+        // Formula: NewDelay = Initial / (1 + (Score * Factor))
+        // This ensures the "Events Per Second" increases linearly, not exponentially.
+        val speedMultiplier = 1f + (state.score * accelerationFactor)
+        val newTick = (initialTickMs / speedMultiplier).toLong()
+
+        // Clamp to minimum delay (max speed)
+        currentTickMs = max(minTickMs, newTick)
+    }
+
+    private fun increaseScore() {
+        state.score += 1
+        ui.updateScore(state.score)
+    }
+
+    private fun spawnEnemyOrCoin() {
+        val occupiedTop = BooleanArray(state.cols)
+        for (ch in state.chickens) if (ch.row == 0 && ch.col in 0 until state.cols) occupiedTop[ch.col] = true
+        for (c in state.coins) if (c.row == 0 && c.col in 0 until state.cols) occupiedTop[c.col] = true
+
+        val freeCols = mutableListOf<Int>()
+        for (c in 0 until state.cols) if (!occupiedTop[c]) freeCols.add(c)
+
+        if (freeCols.isEmpty()) return
+
+        val chosenCol = freeCols[Random.nextInt(freeCols.size)]
+        state.chickens.add(Chicken(row = 0, col = chosenCol))
+        occupiedTop[chosenCol] = true
+
+        if (Random.nextInt(100) < GameDefaults.COIN_SPAWN_CHANCE_PERCENT) {
+            freeCols.clear()
+            for (c in 0 until state.cols) if (!occupiedTop[c]) freeCols.add(c)
+            if (freeCols.isNotEmpty()) {
+                val coinCol = freeCols[Random.nextInt(freeCols.size)]
+                state.coins.add(Coin(row = 0, col = coinCol))
+            }
         }
     }
 
-    fun moveRight() {
-        if (state.paused) return
-        if (state.playerCol < state.cols - 1) {
-            state.playerCol++
-            checkPlayerCollisions()
-            renderer.render(state)
-        }
+    private fun moveBullets() {
+        bulletManager.moveBulletsOneStep(state) { }
     }
 
-    fun onTick() {
-        if (state.paused) return
-
-        // 1. Move bullets
-        bulletManager.moveBulletsOneStep(state) {
-            // Callback when chicken hit
-        }
-
+    private fun moveEnemiesAndCoins() {
         val bottomRow = state.rows - 1
         val now = SystemClock.uptimeMillis()
 
-        // 2. Move Chickens
+        // Move Chickens
         val itChickens = state.chickens.iterator()
         while (itChickens.hasNext()) {
             val ch = itChickens.next()
             ch.row += 1
 
-            // Off board
             if (ch.row >= state.rows) {
                 itChickens.remove()
                 continue
             }
 
-            // Hit Bullet?
-            // Note: BulletManager handles bullet moving into chicken.
-            // Here we handle chicken moving into bullet.
             val bulletIdx = state.bullets.indexOfFirst { b -> b.row == ch.row && b.col == ch.col }
             if (bulletIdx != -1) {
                 val bullet = state.bullets[bulletIdx]
@@ -119,107 +179,79 @@ class GameController(
                 continue
             }
 
-            // Hit Player?
             if (ch.row == bottomRow && ch.col == state.playerCol) {
                 itChickens.remove()
                 handleHit(now)
             }
         }
 
-        // 3. Move Coins
+        // Move Coins
         val itCoins = state.coins.iterator()
         while (itCoins.hasNext()) {
             val coin = itCoins.next()
             coin.row += 1
 
-            // Off board
             if (coin.row >= state.rows) {
                 itCoins.remove()
                 continue
             }
 
-            // Collected by Player?
             if (coin.row == bottomRow && coin.col == state.playerCol) {
                 itCoins.remove()
                 collectCoin()
             }
         }
+    }
 
+    // --- Player Actions ---
+
+    fun shoot() {
+        if (state.paused) return
+        bulletManager.tryShoot(state) { }
         renderer.render(state)
     }
 
-    fun onSpawn() {
+    fun moveLeft() {
         if (state.paused) return
-
-        // Map occupied columns at row 0
-        val occupiedTop = BooleanArray(state.cols)
-        for (ch in state.chickens) {
-            if (ch.row == 0 && ch.col in 0 until state.cols) occupiedTop[ch.col] = true
+        if (state.playerCol > 0) {
+            state.playerCol--
+            if (!checkPlayerCollisions()) ui.playSoundMove()
+            renderer.render(state)
         }
-        for (c in state.coins) {
-            if (c.row == 0 && c.col in 0 until state.cols) occupiedTop[c.col] = true
-        }
-
-        val freeCols = mutableListOf<Int>()
-        for (c in 0 until state.cols) if (!occupiedTop[c]) freeCols.add(c)
-
-        if (freeCols.isEmpty()) return
-
-        // Random logic
-        val chosenCol = freeCols[Random.nextInt(freeCols.size)]
-
-        // 5% chance to spawn Coin instead of Chicken
-        // But only if we have free slots.
-        // Note: You might want to allow both in one tick if multiple cols are free,
-        // but let's keep it simple: either a chicken spawns OR a coin spawns (rarely) OR nothing.
-        // Or better: Always spawn chicken, AND maybe spawn coin in ANOTHER slot.
-
-        // Let's spawn Chicken first
-        state.chickens.add(Chicken(row = 0, col = chosenCol))
-        occupiedTop[chosenCol] = true // Mark as taken
-
-        // Now try to spawn Coin
-        if (Random.nextInt(100) < GameDefaults.COIN_SPAWN_CHANCE_PERCENT) {
-            // Find free cols again
-            freeCols.clear()
-            for (c in 0 until state.cols) if (!occupiedTop[c]) freeCols.add(c)
-
-            if (freeCols.isNotEmpty()) {
-                val coinCol = freeCols[Random.nextInt(freeCols.size)]
-                state.coins.add(Coin(row = 0, col = coinCol))
-            }
-        }
-
-        renderer.render(state)
     }
 
-    fun onScoreTick() {
+    fun moveRight() {
         if (state.paused) return
-        state.score += 1
-        ui.updateScore(state.score)
+        if (state.playerCol < state.cols - 1) {
+            state.playerCol++
+            if (!checkPlayerCollisions()) ui.playSoundMove()
+            renderer.render(state)
+        }
     }
 
-    private fun checkPlayerCollisions() {
+    private fun checkPlayerCollisions(): Boolean {
         val bottomRow = state.rows - 1
+        var hitOccurred = false
 
-        // Check Chicken
         val chIdx = state.chickens.indexOfFirst { it.row == bottomRow && it.col == state.playerCol }
         if (chIdx != -1) {
             state.chickens.removeAt(chIdx)
             handleHit(SystemClock.uptimeMillis())
+            hitOccurred = true
         }
 
-        // Check Coin
         val coinIdx = state.coins.indexOfFirst { it.row == bottomRow && it.col == state.playerCol }
         if (coinIdx != -1) {
             state.coins.removeAt(coinIdx)
             collectCoin()
         }
+        return hitOccurred
     }
 
     private fun collectCoin() {
         state.coinsCollected += 1
         ui.updateCoins(state.coinsCollected)
+        ui.playSoundCoin()
     }
 
     private fun handleHit(now: Long) {
@@ -228,14 +260,11 @@ class GameController(
         state.lives -= 1
         ui.updateHearts(state.lives)
         ui.showHitFeedback()
+        ui.playSoundExplosion()
 
-        // PENALTY: Lose 25 coins
         val oldCoins = state.coinsCollected
         state.coinsCollected = max(0, state.coinsCollected - GameDefaults.PENALTY_ON_DEATH)
-
-        if (oldCoins != state.coinsCollected) {
-            ui.updateCoins(state.coinsCollected)
-        }
+        if (oldCoins != state.coinsCollected) ui.updateCoins(state.coinsCollected)
 
         state.invulnerableUntilMs = now + invulnerableMs
 

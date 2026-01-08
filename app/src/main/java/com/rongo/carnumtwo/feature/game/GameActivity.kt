@@ -25,6 +25,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.rongo.carnumtwo.R
+import com.rongo.carnumtwo.core.audio.SoundManager
 import com.rongo.carnumtwo.core.config.GameDefaults
 import com.rongo.carnumtwo.core.storage.SettingsStorage
 import com.rongo.carnumtwo.core.ui.BaseLocalizedActivity
@@ -46,12 +47,9 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var btnRight: ImageButton
     private lateinit var btnFire: ImageButton
     private lateinit var btnPause: ImageButton
-    // Spaces used for layout balancing if needed, though mostly handled by visibility now
-    private lateinit var spaceLeft: Space
-    private lateinit var spaceRight: Space
 
     private lateinit var tvScore: TextView
-    private lateinit var tvCoins: TextView // משתנה חדש למטבעות
+    private lateinit var tvCoins: TextView
     private lateinit var heart1: ImageView
     private lateinit var heart2: ImageView
     private lateinit var heart3: ImageView
@@ -63,6 +61,9 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var state: GameState
     private lateinit var cells: Array<Array<ImageView>>
 
+    // --- Audio ---
+    private lateinit var soundManager: SoundManager
+
     private var gameOverShown = false
 
     // --- Sensors ---
@@ -70,14 +71,15 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private var accelerometer: Sensor? = null
     private var isTiltEnabled = false
     private var lastTiltMoveTime = 0L
-    // Cooldown in ms to prevent "flying" across screen instantly when tilted
     private val TILT_MOVE_COOLDOWN = 150L
-    // How much tilt needed to register a move (approx 1.5 - 2.0 is usually good)
     private val TILT_THRESHOLD = 1.5f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
+
+        // Initialize Sound Manager
+        soundManager = SoundManager(this)
 
         // Bind views
         root = findViewById(R.id.game_root)
@@ -88,7 +90,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         btnPause = findViewById(R.id.btn_pause)
 
         tvScore = findViewById(R.id.tv_score)
-        tvCoins = findViewById(R.id.tv_coins) // קישור ל-XML של המטבעות
+        tvCoins = findViewById(R.id.tv_coins)
         heart1 = findViewById(R.id.heart_1)
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
@@ -100,8 +102,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         val cols = settings.gridX
         val rows = settings.gridY
 
+        // Use tickMs from settings as the starting speed
+        // spawnMs is ignored in this new logic
+        val initialSpeed = settings.tickMs
+
         // --- Control Setup ---
-        // 1. Buttons Visibility
         if (settings.enableButtons) {
             btnLeft.visibility = View.VISIBLE
             btnRight.visibility = View.VISIBLE
@@ -110,7 +115,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             btnRight.visibility = View.GONE
         }
 
-        // 2. Tilt Setup
         isTiltEnabled = settings.enableTilt
         if (isTiltEnabled) {
             sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -125,11 +129,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             paused = false,
             lives = 3,
             score = 0,
-            coinsCollected = 0, // התחלה עם 0 מטבעות
+            coinsCollected = 0,
             invulnerableUntilMs = 0L,
             chickens = mutableListOf(),
             bullets = mutableListOf(),
-            coins = mutableListOf(), // רשימת המטבעות על הלוח
+            coins = mutableListOf(),
             lastShotAtMs = 0L
         )
 
@@ -138,23 +142,22 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
         val bulletManager = BulletManager(shotCooldownMs = 200L)
 
+        // Pass initialSpeed to Controller for acceleration logic
         controller = GameController(
             state = state,
             renderer = renderer,
             ui = this,
             invulnerableMs = GameDefaults.INVULNERABLE_MS,
-            bulletManager = bulletManager
+            bulletManager = bulletManager,
+            initialTickMs = initialSpeed
         )
         controller.init()
 
-        loop = GameLoop(
-            tickMs = settings.tickMs,
-            spawnMs = settings.spawnMs,
-            controller = controller
-        )
+        // Start the single master loop
+        loop = GameLoop(controller)
         loop.start()
 
-        // Button Listeners (only effective if visible)
+        // Button Listeners
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
         btnFire.setOnClickListener { controller.shoot() }
@@ -165,11 +168,13 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
     override fun onResume() {
         super.onResume()
-        if (!gameOverShown) loop.start()
+        if (!gameOverShown) {
+            loop.start()
+            soundManager.startMusic()
+        }
         updatePauseIcon()
         renderer.render(state)
 
-        // Register Sensor
         if (isTiltEnabled && accelerometer != null) {
             sensorManager?.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME)
         }
@@ -181,7 +186,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         updatePauseIcon()
         loop.stop()
 
-        // Unregister Sensor
+        soundManager.pauseMusic()
+
         if (isTiltEnabled) {
             sensorManager?.unregisterListener(this)
         }
@@ -190,6 +196,20 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     override fun onDestroy() {
         super.onDestroy()
         loop.stop()
+        soundManager.release()
+    }
+
+    // --- Audio Implementation ---
+    override fun playSoundMove() {
+        soundManager.playMove()
+    }
+
+    override fun playSoundExplosion() {
+        soundManager.playExplode()
+    }
+
+    override fun playSoundCoin() {
+        soundManager.playCoin()
     }
 
     // --- Sensor Logic ---
@@ -197,16 +217,13 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         if (event == null || controller.isPaused() || gameOverShown) return
 
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            val x = event.values[0] // X axis: Tilt Left (+), Tilt Right (-) (Depends on orientation)
-
+            val x = event.values[0]
             val now = SystemClock.uptimeMillis()
             if (now - lastTiltMoveTime > TILT_MOVE_COOLDOWN) {
-                // Tilt Right (X < -Threshold)
                 if (x < -TILT_THRESHOLD) {
                     controller.moveRight()
                     lastTiltMoveTime = now
                 }
-                // Tilt Left (X > Threshold)
                 else if (x > TILT_THRESHOLD) {
                     controller.moveLeft()
                     lastTiltMoveTime = now
@@ -215,15 +232,20 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Not used
-    }
-    // --- End Sensor Logic ---
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) { }
 
+    // --- Game Logic Helpers ---
     private fun togglePauseByUser() {
-        controller.setPaused(!controller.isPaused())
+        val wasPaused = controller.isPaused()
+        controller.setPaused(!wasPaused)
         updatePauseIcon()
         renderer.render(state)
+
+        if (!wasPaused) {
+            soundManager.pauseMusic()
+        } else {
+            soundManager.startMusic()
+        }
     }
 
     private fun updatePauseIcon() {
@@ -306,7 +328,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         tvScore.text = getString(R.string.score_label, score)
     }
 
-    // --- New Function for Coins ---
     override fun updateCoins(coins: Int) {
         tvCoins.text = coins.toString()
     }
@@ -346,6 +367,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     override fun showGameOverDialog(finalScore: Int) {
         gameOverShown = true
         loop.stop()
+        soundManager.pauseMusic()
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.game_over_title))
@@ -355,6 +377,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
                 gameOverShown = false
                 controller.resetGame()
                 loop.start()
+                soundManager.startMusic()
                 updatePauseIcon()
             }
             .setNeutralButton(getString(R.string.home)) { _, _ ->

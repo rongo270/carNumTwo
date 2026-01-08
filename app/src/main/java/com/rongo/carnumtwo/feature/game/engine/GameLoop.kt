@@ -3,48 +3,42 @@ package com.rongo.carnumtwo.feature.game.engine
 import android.os.Handler
 import android.os.Looper
 
+/**
+ * A dynamic game loop that adjusts its speed based on the controller.
+ * Instead of fixed intervals, it schedules the next tick based on currentTickRate.
+ */
 class GameLoop(
-    private val tickMs: Long,
-    private val spawnMs: Long,
     private val controller: GameController
 ) {
 
     private val handler = Handler(Looper.getMainLooper())
+    private var isRunning = false
 
-    // Runs game tick updates (movement/collisions)
-    private val tickRunnable = object : Runnable {
+    private val loopRunnable = object : Runnable {
         override fun run() {
-            if (!controller.isPaused()) controller.onTick()
-            handler.postDelayed(this, tickMs)
+            if (!isRunning) return
+
+            if (!controller.isPaused()) {
+                // Perform one master game step (movement, logic, etc.)
+                controller.performGameStep()
+            }
+
+            // Get the current speed (which might have accelerated during the step)
+            val nextDelay = controller.getCurrentTickRate()
+
+            // Schedule the next loop iteration
+            handler.postDelayed(this, nextDelay)
         }
     }
 
-    // Runs spawn updates (new chickens)
-    private val spawnRunnable = object : Runnable {
-        override fun run() {
-            if (!controller.isPaused()) controller.onSpawn()
-            handler.postDelayed(this, spawnMs)
-        }
-    }
-
-    // Runs score updates (once per second)
-    private val scoreRunnable = object : Runnable {
-        override fun run() {
-            if (!controller.isPaused()) controller.onScoreTick()
-            handler.postDelayed(this, 1000L)
-        }
-    }
-
-    // Start the loop (posts all runnables)
     fun start() {
-        stop()
-        handler.post(tickRunnable)
-        handler.post(spawnRunnable)
-        handler.post(scoreRunnable)
+        if (isRunning) return
+        isRunning = true
+        handler.post(loopRunnable)
     }
 
-    // Stop the loop (remove all scheduled callbacks)
     fun stop() {
+        isRunning = false
         handler.removeCallbacksAndMessages(null)
     }
 }
