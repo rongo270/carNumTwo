@@ -12,11 +12,10 @@ class GameRenderer(
     private val cols: Int
 ) {
 
-    // Render the current state into the grid cells
     fun render(state: GameState) {
         val now = SystemClock.uptimeMillis()
 
-        // Clear the board (reset images and alpha)
+        // Clear grid
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 val cell = cells[r][c]
@@ -25,25 +24,39 @@ class GameRenderer(
             }
         }
 
-        // Draw chickens
-        for (ch in state.chickens) {
-            if (ch.row in 0 until rows && ch.col in 0 until cols) {
-                val cell = cells[ch.row][ch.col]
-                cell.setImageResource(R.drawable.ic_chicken)
-                cell.alpha = 1f
+        // Draw Coins
+        for (coin in state.coins) {
+            if (coin.row in 0 until rows && coin.col in 0 until cols) {
+                cells[coin.row][coin.col].setImageResource(R.drawable.ic_coin)
             }
         }
 
-        // Draw bullets
+        // Draw Chickens
+        for (ch in state.chickens) {
+            if (ch.row in 0 until rows && ch.col in 0 until cols) {
+                cells[ch.row][ch.col].setImageResource(R.drawable.ic_chicken)
+            }
+        }
+
+        // Draw Bullets (With different images based on power)
         for (b in state.bullets) {
             if (b.row in 0 until rows && b.col in 0 until cols) {
                 val cell = cells[b.row][b.col]
-                cell.setImageResource(R.drawable.ic_bullet)
-                cell.alpha = 1f
+
+                val resId = when(b.power) {
+                    1 -> R.drawable.ic_bullet_1
+                    2 -> R.drawable.ic_bullet_2
+                    3 -> R.drawable.ic_bullet_3
+                    4 -> R.drawable.ic_bullet_4
+                    5 -> R.drawable.ic_bullet_5
+                    else -> R.drawable.ic_bullet_1
+                }
+
+                cell.setImageResource(resId)
             }
         }
 
-        // Draw player ship, with fade effect during invulnerability
+        // Draw Player
         val bottomRow = rows - 1
         if (bottomRow in 0 until rows && state.playerCol in 0 until cols) {
             val shipCell = cells[bottomRow][state.playerCol]
@@ -56,20 +69,12 @@ class GameRenderer(
         }
     }
 
-    // Compute player alpha based on invulnerability window (fade out then in)
-    private fun playerAlpha(
-        nowMs: Long,
-        invulnerableUntilMs: Long,
-        invulnerableMs: Long
-    ): Float {
+    private fun playerAlpha(nowMs: Long, invulnerableUntilMs: Long, invulnerableMs: Long): Float {
         if (invulnerableMs <= 0L) return 1f
-
         val startMs = invulnerableUntilMs - invulnerableMs
         if (nowMs < startMs || nowMs >= invulnerableUntilMs) return 1f
 
         val t = ((nowMs - startMs).toFloat() / invulnerableMs.toFloat()).coerceIn(0f, 1f)
-
-        // Fade down to min alpha, then back to full alpha
         val minAlpha = 0.25f
         return if (t < 0.5f) {
             val k = t / 0.5f

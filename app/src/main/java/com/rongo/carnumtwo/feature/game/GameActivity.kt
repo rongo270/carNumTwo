@@ -46,10 +46,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var btnRight: ImageButton
     private lateinit var btnFire: ImageButton
     private lateinit var btnPause: ImageButton
+    // Spaces used for layout balancing if needed, though mostly handled by visibility now
     private lateinit var spaceLeft: Space
     private lateinit var spaceRight: Space
 
     private lateinit var tvScore: TextView
+    private lateinit var tvCoins: TextView // משתנה חדש למטבעות
     private lateinit var heart1: ImageView
     private lateinit var heart2: ImageView
     private lateinit var heart3: ImageView
@@ -85,11 +87,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         btnFire = findViewById(R.id.btn_fire)
         btnPause = findViewById(R.id.btn_pause)
 
-        // Find spaces to handle visibility if buttons are gone
-        // Note: In the XML provided earlier, spaces were not ID'd.
-        // If layout breaks, just hiding buttons is usually enough.
-
         tvScore = findViewById(R.id.tv_score)
+        tvCoins = findViewById(R.id.tv_coins) // קישור ל-XML של המטבעות
         heart1 = findViewById(R.id.heart_1)
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
@@ -126,9 +125,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             paused = false,
             lives = 3,
             score = 0,
+            coinsCollected = 0, // התחלה עם 0 מטבעות
             invulnerableUntilMs = 0L,
             chickens = mutableListOf(),
             bullets = mutableListOf(),
+            coins = mutableListOf(), // רשימת המטבעות על הלוח
             lastShotAtMs = 0L
         )
 
@@ -198,14 +199,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
             val x = event.values[0] // X axis: Tilt Left (+), Tilt Right (-) (Depends on orientation)
 
-            // Note: On most devices in portrait:
-            // Tilt Right (right side goes down) -> X becomes negative
-            // Tilt Left (left side goes down) -> X becomes positive
-            // We'll throttle movement so it doesn't zip across instantly
-
             val now = SystemClock.uptimeMillis()
             if (now - lastTiltMoveTime > TILT_MOVE_COOLDOWN) {
-
                 // Tilt Right (X < -Threshold)
                 if (x < -TILT_THRESHOLD) {
                     controller.moveRight()
@@ -223,7 +218,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         // Not used
     }
-
     // --- End Sensor Logic ---
 
     private fun togglePauseByUser() {
@@ -310,6 +304,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
     override fun updateScore(score: Int) {
         tvScore.text = getString(R.string.score_label, score)
+    }
+
+    // --- New Function for Coins ---
+    override fun updateCoins(coins: Int) {
+        tvCoins.text = coins.toString()
     }
 
     override fun showHitFeedback() {

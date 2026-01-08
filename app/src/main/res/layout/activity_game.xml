@@ -28,18 +28,46 @@
             android:scaleType="fitCenter"
             app:tint="@color/white" />
 
-        <TextView
-            android:id="@+id/tv_score"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="center"
-            android:text="SCORE: 0"
-            android:textColor="@color/neon_blue"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:shadowColor="@color/neon_purple"
-            android:shadowRadius="10" />
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tv_score"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SCORE: 0"
+                android:textColor="@color/neon_blue"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_coin"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView
+                    android:id="@+id/tv_coins"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#FFD700"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/hearts_container"
@@ -49,24 +77,24 @@
 
             <ImageView
                 android:id="@+id/heart_1"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginEnd="4dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="2dp"
                 android:src="@drawable/ic_heart_full"
                 app:tint="@color/neon_pink" />
 
             <ImageView
                 android:id="@+id/heart_2"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginEnd="4dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="2dp"
                 android:src="@drawable/ic_heart_full"
                 app:tint="@color/neon_pink" />
 
             <ImageView
                 android:id="@+id/heart_3"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:src="@drawable/ic_heart_full"
                 app:tint="@color/neon_pink" />
         </LinearLayout>
