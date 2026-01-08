@@ -20,6 +20,10 @@ interface GameUiCallbacks {
     fun playSoundMove()
     fun playSoundExplosion()
     fun playSoundCoin()
+
+    // Shoot Cooldown Callbacks
+    fun onShootSuccess(cooldownMs: Long)
+    fun onShootFailed()
 }
 
 class GameController(
@@ -28,30 +32,23 @@ class GameController(
     private val ui: GameUiCallbacks,
     private val invulnerableMs: Long,
     private val bulletManager: BulletManager,
-    private val initialTickMs: Long // We keep the starting speed reference
+    private val initialTickMs: Long
 ) {
 
-    // --- Speed Logic ---
     private var currentTickMs: Long = initialTickMs
-    private val minTickMs: Long = 150L // Cap maximum speed
-
-    // Acceleration Factor:
-    // 0.003 means speed increases by 0.3% per score point.
-    // At score 100, speed is ~1.3x faster.
-    // At score 333, speed is ~2.0x faster (Double speed).
-    // This creates a very smooth, linear difficulty curve.
+    private val minTickMs: Long = 150L
     private val accelerationFactor: Float = 0.003f
-
     private var tickCounter: Int = 0
 
     fun init() {
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         ui.updateCoins(state.coinsCollected)
+        // Ensure button starts full (ready)
+        ui.onShootSuccess(0)
         renderer.render(state)
     }
 
-    // Called by GameLoop
     fun getCurrentTickRate(): Long {
         return if (state.paused) 100L else currentTickMs
     }
@@ -74,33 +71,27 @@ class GameController(
         state.lastShotAtMs = 0L
         state.playerCol = state.cols / 2
 
-        // Reset speed logic
         currentTickMs = initialTickMs
         tickCounter = 0
 
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         ui.updateCoins(state.coinsCollected)
+        // Reset cooldown visual
+        ui.onShootSuccess(0)
         renderer.render(state)
     }
 
-    /**
-     * MASTER GAME STEP
-     */
     fun performGameStep() {
         if (state.paused) return
 
-        // 1. Always move objects
         moveBullets()
         moveEnemiesAndCoins()
 
-        // 2. Logic every 2 ticks (Spawn & Score)
         tickCounter++
         if (tickCounter % 2 == 0) {
             spawnEnemyOrCoin()
             increaseScore()
-
-            // Recalculate speed based on new score
             recalculateSpeed()
         }
 
@@ -109,14 +100,9 @@ class GameController(
 
     // --- Private Logic ---
 
-    // New Formula for Linear Speed Increase
     private fun recalculateSpeed() {
-        // Formula: NewDelay = Initial / (1 + (Score * Factor))
-        // This ensures the "Events Per Second" increases linearly, not exponentially.
         val speedMultiplier = 1f + (state.score * accelerationFactor)
         val newTick = (initialTickMs / speedMultiplier).toLong()
-
-        // Clamp to minimum delay (max speed)
         currentTickMs = max(minTickMs, newTick)
     }
 
@@ -157,7 +143,6 @@ class GameController(
         val bottomRow = state.rows - 1
         val now = SystemClock.uptimeMillis()
 
-        // Move Chickens
         val itChickens = state.chickens.iterator()
         while (itChickens.hasNext()) {
             val ch = itChickens.next()
@@ -185,7 +170,6 @@ class GameController(
             }
         }
 
-        // Move Coins
         val itCoins = state.coins.iterator()
         while (itCoins.hasNext()) {
             val coin = itCoins.next()
@@ -207,7 +191,16 @@ class GameController(
 
     fun shoot() {
         if (state.paused) return
-        bulletManager.tryShoot(state) { }
+
+        // Check if shot was allowed
+        val shotFired = bulletManager.tryShoot(state) { }
+
+        if (shotFired) {
+            ui.onShootSuccess(GameDefaults.SHOOT_COOLDOWN_MS)
+        } else {
+            ui.onShootFailed()
+        }
+
         renderer.render(state)
     }
 

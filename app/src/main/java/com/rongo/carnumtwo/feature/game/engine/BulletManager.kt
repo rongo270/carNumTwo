@@ -9,7 +9,6 @@ class BulletManager(
     private val shotCooldownMs: Long
 ) {
 
-    // Calculate weapon power based on coins
     private fun getCurrentPower(coins: Int): Int {
         return when {
             coins >= GameDefaults.COINS_FOR_LVL_5 -> 5
@@ -20,38 +19,43 @@ class BulletManager(
         }
     }
 
-    fun tryShoot(state: GameState, onHit: () -> Unit) {
-        if (state.paused) return
+    // Changed to return Boolean (True = Shot fired, False = Failed/Cooldown)
+    fun tryShoot(state: GameState, onHit: () -> Unit): Boolean {
+        if (state.paused) return false
 
         val now = SystemClock.uptimeMillis()
-        if (now - state.lastShotAtMs < shotCooldownMs) return
-        state.lastShotAtMs = now
+
+        // Check Cooldown
+        if (now - state.lastShotAtMs < shotCooldownMs) return false
+
+        // Update last shot time only if successful logic follows
 
         val startRow = state.rows - 2
-        if (startRow < 0) return
+        if (startRow < 0) return false
 
         val col = state.playerCol
         val power = getCurrentPower(state.coinsCollected)
 
-        // 1. Check if chicken is immediately above (Spawn Kill)
+        // 1. Check spawn kill
         val chickenIdx = findChickenIndex(state, startRow, col)
         if (chickenIdx != -1) {
             state.chickens.removeAt(chickenIdx)
             onHit()
-            // Even if we kill instantly, if power > 1, the bullet continues as (power - 1)
-            // But visually it spawns at startRow.
             if (power > 1) {
                 state.bullets.add(Bullet(row = startRow, col = col, power = power - 1))
             }
-            return
+            state.lastShotAtMs = now // Success
+            return true
         }
 
-        // 2. Prevent stacking bullets in the same exact cell
+        // 2. Prevent stacking
         val hasBullet = state.bullets.any { it.row == startRow && it.col == col }
-        if (hasBullet) return
+        if (hasBullet) return false
 
         // 3. Spawn Bullet
         state.bullets.add(Bullet(row = startRow, col = col, power = power))
+        state.lastShotAtMs = now // Success
+        return true
     }
 
     fun moveBulletsOneStep(state: GameState, onHit: () -> Unit) {
@@ -62,31 +66,25 @@ class BulletManager(
             val b = it.next()
             val nextRow = b.row - 1
 
-            // 1. Check bounds
             if (nextRow < 0) {
                 it.remove()
                 continue
             }
 
-            // 2. Check collision
             val chickenIdx = findChickenIndex(state, nextRow, b.col)
             if (chickenIdx != -1) {
-                // Hit!
                 state.chickens.removeAt(chickenIdx)
                 onHit()
 
-                // Degrade bullet
-                b.power -= 1 // Assume normal chicken has 1 HP/Armor
-
+                b.power -= 1
                 if (b.power <= 0) {
-                    it.remove() // Bullet destroyed
+                    it.remove()
                 } else {
-                    b.row = nextRow // Bullet continues moving
+                    b.row = nextRow
                 }
                 continue
             }
 
-            // 3. Just move
             b.row = nextRow
         }
     }

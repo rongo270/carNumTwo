@@ -1,7 +1,10 @@
 package com.rongo.carnumtwo.feature.game
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.ClipDrawable
+import android.graphics.drawable.LayerDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -40,7 +43,6 @@ import kotlin.math.min
 
 class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListener {
 
-    // UI Views
     private lateinit var root: View
     private lateinit var grid: GridLayout
     private lateinit var btnLeft: ImageButton
@@ -54,7 +56,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var heart2: ImageView
     private lateinit var heart3: ImageView
 
-    // Game Engine Components
     private lateinit var controller: GameController
     private lateinit var renderer: GameRenderer
     private lateinit var loop: GameLoop
@@ -62,13 +63,14 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var state: GameState
     private lateinit var cells: Array<Array<ImageView>>
 
-    // Audio Manager
     private lateinit var soundManager: SoundManager
 
-    // Game State Flag
     private var gameOverShown = false
 
-    // Sensors Variables
+    // Animator for shoot button cooldown
+    private var cooldownAnimator: ValueAnimator? = null
+
+    // Sensors
     private var sensorManager: SensorManager? = null
     private var accelerometer: Sensor? = null
     private var isTiltEnabled = false
@@ -80,10 +82,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
 
-        // 1. Initialize Sound Manager
         soundManager = SoundManager(this)
 
-        // Bind views
         root = findViewById(R.id.game_root)
         grid = findViewById(R.id.game_grid)
         btnLeft = findViewById(R.id.btn_left)
@@ -97,19 +97,20 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
 
+        // *** Set the Cooldown Background ***
+        btnFire.setBackgroundResource(R.drawable.bg_fire_button_cooldown)
+        // Start full (Level 10000 = 100%)
+        setButtonCooldownLevel(10000)
+
         applyBottomInsetsToRoot()
 
-        // 2. Load settings
         val settings = SettingsStorage(this).load()
         val cols = settings.gridX
         val rows = settings.gridY
         val initialSpeed = settings.tickMs
 
-        // 3. Apply Audio Settings (Volume 0-100)
         soundManager.setVolumes(settings.musicVolume, settings.sfxVolume)
 
-        // --- Control Setup ---
-        // Configure Buttons Visibility
         if (settings.enableButtons) {
             btnLeft.visibility = View.VISIBLE
             btnRight.visibility = View.VISIBLE
@@ -118,14 +119,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             btnRight.visibility = View.GONE
         }
 
-        // Configure Tilt Sensor
         isTiltEnabled = settings.enableTilt
         if (isTiltEnabled) {
             sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
             accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         }
 
-        // Create initial game state
         state = GameState(
             cols = cols,
             rows = rows,
@@ -144,9 +143,9 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         setupGrid(cols, rows)
         renderer = GameRenderer(cells, rows, cols)
 
-        val bulletManager = BulletManager(shotCooldownMs = 200L)
+        // Pass 3000ms cooldown here
+        val bulletManager = BulletManager(shotCooldownMs = GameDefaults.SHOOT_COOLDOWN_MS)
 
-        // Initialize Controller with initial speed from settings
         controller = GameController(
             state = state,
             renderer = renderer,
@@ -157,11 +156,9 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         )
         controller.init()
 
-        // Start the master game loop
         loop = GameLoop(controller)
         loop.start()
 
-        // Set Button Listeners
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
         btnFire.setOnClickListener { controller.shoot() }
@@ -174,7 +171,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         super.onResume()
         if (!gameOverShown) {
             loop.start()
-            // Resume music
             soundManager.startMusic()
         }
         updatePauseIcon()
@@ -191,8 +187,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         updatePauseIcon()
         loop.stop()
 
-        // Pause music when app goes background
         soundManager.pauseMusic()
+        cooldownAnimator?.cancel() // Stop animation on pause
 
         if (isTiltEnabled) {
             sensorManager?.unregisterListener(this)
@@ -202,7 +198,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     override fun onDestroy() {
         super.onDestroy()
         loop.stop()
-        soundManager.release() // Release audio resources
+        soundManager.release()
     }
 
     // --- Audio Implementation ---
@@ -218,15 +214,60 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         soundManager.playCoin()
     }
 
-    // --- Sensor Logic (Tilt Control) ---
+    // --- Cooldown UI Implementation ---
+
+    override fun onShootSuccess(cooldownMs: Long) {
+        // Start animation from 0 (empty) to 10000 (full) over 3 seconds
+        animateCooldown(cooldownMs)
+    }
+
+    override fun onShootFailed() {
+        // Locked sound
+        soundManager.playLocked()
+
+        // Shake animation
+        btnFire.animate()
+            .translationX(10f)
+            .setDuration(50)
+            .withEndAction {
+                btnFire.animate().translationX(-10f).setDuration(50).withEndAction {
+                    btnFire.animate().translationX(0f).setDuration(50).start()
+                }.start()
+            }.start()
+    }
+
+    private fun animateCooldown(durationMs: Long) {
+        if (durationMs <= 0) {
+            setButtonCooldownLevel(10000)
+            return
+        }
+
+        cooldownAnimator?.cancel()
+
+        cooldownAnimator = ValueAnimator.ofInt(0, 10000).apply {
+            duration = durationMs
+            addUpdateListener { animator ->
+                val level = animator.animatedValue as Int
+                setButtonCooldownLevel(level)
+            }
+            start()
+        }
+    }
+
+    private fun setButtonCooldownLevel(level: Int) {
+        // Access the LayerDrawable and then the ClipDrawable
+        val layerDrawable = btnFire.background as? LayerDrawable
+        val clipDrawable = layerDrawable?.findDrawableByLayerId(android.R.id.progress) as? ClipDrawable
+        clipDrawable?.level = level
+    }
+
+    // --- Sensor Logic ---
     override fun onSensorChanged(event: SensorEvent?) {
         if (event == null || controller.isPaused() || gameOverShown) return
 
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
             val x = event.values[0]
             val now = SystemClock.uptimeMillis()
-
-            // Throttle sensor events to avoid too fast movement
             if (now - lastTiltMoveTime > TILT_MOVE_COOLDOWN) {
                 if (x < -TILT_THRESHOLD) {
                     controller.moveRight()
@@ -249,13 +290,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         updatePauseIcon()
         renderer.render(state)
 
-        // Toggle music based on pause state
         if (!wasPaused) {
-            // Game is now PAUSED
             soundManager.pauseMusic()
+            cooldownAnimator?.pause()
         } else {
-            // Game is now RESUMED
             soundManager.startMusic()
+            cooldownAnimator?.resume()
         }
     }
 
@@ -263,7 +303,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         btnPause.setImageResource(if (controller.isPaused()) R.drawable.ic_play else R.drawable.ic_pause)
     }
 
-    // Handle Edge-to-Edge display
     private fun applyBottomInsetsToRoot() {
         val baseBottom = root.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -273,7 +312,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         }
     }
 
-    // Setup GridView dynamically
     private fun setupGrid(cols: Int, rows: Int) {
         grid.removeAllViews()
         grid.columnCount = cols
@@ -289,7 +327,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             }
         }
 
-        // Calculate cell size after layout measure
         grid.post {
             val margin = dpToPx(6)
             val availableW = max(0, grid.width - (cols * margin * 2))
@@ -312,7 +349,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
                 }
             }
 
-            // Center grid in container
             val contentW = cols * cellSize + cols * margin * 2
             val contentH = rows * cellSize + rows * margin * 2
             val padX = max(0, (grid.width - contentW) / 2)
@@ -328,7 +364,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         return (dp * resources.displayMetrics.density).toInt()
     }
 
-    // --- UI Update Callbacks ---
     override fun updateHearts(lives: Int) {
         setHeart(heart1, lives >= 1)
         setHeart(heart2, lives >= 2)
@@ -384,6 +419,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         gameOverShown = true
         loop.stop()
         soundManager.pauseMusic()
+        cooldownAnimator?.cancel()
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.game_over_title))
