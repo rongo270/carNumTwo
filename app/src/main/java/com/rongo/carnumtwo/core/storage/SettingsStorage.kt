@@ -14,7 +14,12 @@ class SettingsStorage(context: Context) {
         val tick = prefs.getLong(PrefsKeys.TICK_MS, GameDefaults.DEFAULT_TICK_MS)
         val spawn = prefs.getLong(PrefsKeys.SPAWN_MS, GameDefaults.DEFAULT_SPAWN_MS)
         val lang = prefs.getString(PrefsKeys.LANGUAGE, GameDefaults.DEFAULT_LANGUAGE) ?: GameDefaults.DEFAULT_LANGUAGE
-        return AppSettings(x, y, tick, spawn, lang)
+
+        // Load controls (Default: Buttons ON, Tilt OFF)
+        val buttons = prefs.getBoolean(PrefsKeys.ENABLE_BUTTONS, true)
+        val tilt = prefs.getBoolean(PrefsKeys.ENABLE_TILT, false)
+
+        return AppSettings(x, y, tick, spawn, lang, buttons, tilt)
     }
 
     fun saveGrid(x: Int, y: Int) {
@@ -32,6 +37,13 @@ class SettingsStorage(context: Context) {
         prefs.edit()
             .putLong(PrefsKeys.TICK_MS, tickMs)
             .putLong(PrefsKeys.SPAWN_MS, spawnMs)
+            .apply()
+    }
+
+    fun saveControls(enableButtons: Boolean, enableTilt: Boolean) {
+        prefs.edit()
+            .putBoolean(PrefsKeys.ENABLE_BUTTONS, enableButtons)
+            .putBoolean(PrefsKeys.ENABLE_TILT, enableTilt)
             .apply()
     }
 }

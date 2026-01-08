@@ -4,28 +4,36 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="chicken"
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CarNumTwo"
         tools:targetApi="31">
+
         <activity
             android:name=".feature.menu.StartMenuActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".feature.settings.SettingsActivity"
+            android:screenOrientation="portrait"/>
 
-        <activity android:name=".feature.settings.SettingsActivity" />
-        <activity android:name=".feature.game.GameActivity" />
+        <activity
+            android:name=".feature.game.GameActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

@@ -5,5 +5,7 @@ data class AppSettings(
     val gridY: Int,
     val tickMs: Long,
     val spawnMs: Long,
-    val language: String
+    val language: String,
+    val enableButtons: Boolean,
+    val enableTilt: Boolean
 )

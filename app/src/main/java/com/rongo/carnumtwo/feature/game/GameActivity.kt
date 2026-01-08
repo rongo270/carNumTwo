@@ -1,8 +1,14 @@
 package com.rongo.carnumtwo.feature.game
 
+import android.content.Context
 import android.content.Intent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -11,6 +17,7 @@ import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -31,7 +38,7 @@ import com.rongo.carnumtwo.feature.menu.StartMenuActivity
 import kotlin.math.max
 import kotlin.math.min
 
-class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
+class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListener {
 
     private lateinit var root: View
     private lateinit var grid: GridLayout
@@ -39,6 +46,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
     private lateinit var btnRight: ImageButton
     private lateinit var btnFire: ImageButton
     private lateinit var btnPause: ImageButton
+    private lateinit var spaceLeft: Space
+    private lateinit var spaceRight: Space
 
     private lateinit var tvScore: TextView
     private lateinit var heart1: ImageView
@@ -54,9 +63,18 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
     private var gameOverShown = false
 
+    // --- Sensors ---
+    private var sensorManager: SensorManager? = null
+    private var accelerometer: Sensor? = null
+    private var isTiltEnabled = false
+    private var lastTiltMoveTime = 0L
+    // Cooldown in ms to prevent "flying" across screen instantly when tilted
+    private val TILT_MOVE_COOLDOWN = 150L
+    // How much tilt needed to register a move (approx 1.5 - 2.0 is usually good)
+    private val TILT_THRESHOLD = 1.5f
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Inflate the game screen layout
         setContentView(R.layout.activity_game)
 
         // Bind views
@@ -67,18 +85,38 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         btnFire = findViewById(R.id.btn_fire)
         btnPause = findViewById(R.id.btn_pause)
 
+        // Find spaces to handle visibility if buttons are gone
+        // Note: In the XML provided earlier, spaces were not ID'd.
+        // If layout breaks, just hiding buttons is usually enough.
+
         tvScore = findViewById(R.id.tv_score)
         heart1 = findViewById(R.id.heart_1)
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
 
-        // Apply safe padding for system bars
         applyBottomInsetsToRoot()
 
-        // Load settings for grid and speeds
+        // Load settings
         val settings = SettingsStorage(this).load()
         val cols = settings.gridX
         val rows = settings.gridY
+
+        // --- Control Setup ---
+        // 1. Buttons Visibility
+        if (settings.enableButtons) {
+            btnLeft.visibility = View.VISIBLE
+            btnRight.visibility = View.VISIBLE
+        } else {
+            btnLeft.visibility = View.GONE
+            btnRight.visibility = View.GONE
+        }
+
+        // 2. Tilt Setup
+        isTiltEnabled = settings.enableTilt
+        if (isTiltEnabled) {
+            sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+            accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        }
 
         // Create initial game state
         state = GameState(
@@ -94,18 +132,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             lastShotAtMs = 0L
         )
 
-        // Build the grid UI
         setupGrid(cols, rows)
-
-        // Renderer draws state into the grid
         renderer = GameRenderer(cells, rows, cols)
 
-        // Bullet manager handles shooting and bullet movement
-        val bulletManager = BulletManager(
-            shotCooldownMs = 200L
-        )
+        val bulletManager = BulletManager(shotCooldownMs = 200L)
 
-        // Controller updates the state and calls render/UI callbacks
         controller = GameController(
             state = state,
             renderer = renderer,
@@ -115,7 +146,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         )
         controller.init()
 
-        // Game loop triggers ticks/spawns/score updates
         loop = GameLoop(
             tickMs = settings.tickMs,
             spawnMs = settings.spawnMs,
@@ -123,51 +153,89 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         )
         loop.start()
 
-        // Player controls
+        // Button Listeners (only effective if visible)
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
         btnFire.setOnClickListener { controller.shoot() }
 
-        // Pause control
         btnPause.setOnClickListener { togglePauseByUser() }
         updatePauseIcon()
     }
 
-    override fun onPause() {
-        super.onPause()
-        // Pause gameplay when app goes to background
-        if (!controller.isPaused()) controller.setPaused(true)
-        updatePauseIcon()
-        loop.stop()
-    }
-
     override fun onResume() {
         super.onResume()
-        // Resume loop when returning (unless game over dialog is shown)
         if (!gameOverShown) loop.start()
         updatePauseIcon()
         renderer.render(state)
+
+        // Register Sensor
+        if (isTiltEnabled && accelerometer != null) {
+            sensorManager?.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (!controller.isPaused()) controller.setPaused(true)
+        updatePauseIcon()
+        loop.stop()
+
+        // Unregister Sensor
+        if (isTiltEnabled) {
+            sensorManager?.unregisterListener(this)
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Stop loop to avoid callbacks after activity is destroyed
         loop.stop()
     }
 
-    // Toggle pause when user presses the pause/play button
+    // --- Sensor Logic ---
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event == null || controller.isPaused() || gameOverShown) return
+
+        if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            val x = event.values[0] // X axis: Tilt Left (+), Tilt Right (-) (Depends on orientation)
+
+            // Note: On most devices in portrait:
+            // Tilt Right (right side goes down) -> X becomes negative
+            // Tilt Left (left side goes down) -> X becomes positive
+            // We'll throttle movement so it doesn't zip across instantly
+
+            val now = SystemClock.uptimeMillis()
+            if (now - lastTiltMoveTime > TILT_MOVE_COOLDOWN) {
+
+                // Tilt Right (X < -Threshold)
+                if (x < -TILT_THRESHOLD) {
+                    controller.moveRight()
+                    lastTiltMoveTime = now
+                }
+                // Tilt Left (X > Threshold)
+                else if (x > TILT_THRESHOLD) {
+                    controller.moveLeft()
+                    lastTiltMoveTime = now
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // Not used
+    }
+
+    // --- End Sensor Logic ---
+
     private fun togglePauseByUser() {
         controller.setPaused(!controller.isPaused())
         updatePauseIcon()
         renderer.render(state)
     }
 
-    // Update pause button icon based on current paused state
     private fun updatePauseIcon() {
         btnPause.setImageResource(if (controller.isPaused()) R.drawable.ic_play else R.drawable.ic_pause)
     }
 
-    // Add bottom inset padding so controls are not hidden by system navigation bar
     private fun applyBottomInsetsToRoot() {
         val baseBottom = root.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -177,13 +245,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         }
     }
 
-    // Create grid cells and size them to fit the available space
     private fun setupGrid(cols: Int, rows: Int) {
         grid.removeAllViews()
         grid.columnCount = cols
         grid.rowCount = rows
 
-        // Create cell ImageViews
         cells = Array(rows) { r ->
             Array(cols) {
                 val cell = AppCompatImageView(this)
@@ -194,10 +260,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             }
         }
 
-        // Size cells after the grid is measured
         grid.post {
             val margin = dpToPx(6)
-
             val availableW = max(0, grid.width - (cols * margin * 2))
             val availableH = max(0, grid.height - (rows * margin * 2))
 
@@ -205,7 +269,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             val cellSizeByH = if (rows > 0) availableH / rows else 0
             val cellSize = max(1, min(cellSizeByW, cellSizeByH))
 
-            // Apply layout params for each cell
             for (r in 0 until rows) {
                 for (c in 0 until cols) {
                     val lp = GridLayout.LayoutParams().apply {
@@ -219,7 +282,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
                 }
             }
 
-            // Center the grid content inside the GridLayout
             val contentW = cols * cellSize + cols * margin * 2
             val contentH = rows * cellSize + rows * margin * 2
             val padX = max(0, (grid.width - contentW) / 2)
@@ -227,35 +289,29 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
 
             grid.setPadding(padX, padY, padX, padY)
             grid.clipToPadding = false
-
             renderer.render(state)
         }
     }
 
-    // Convert dp to px for consistent sizing across devices
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
-    // Update heart icons based on remaining lives
     override fun updateHearts(lives: Int) {
         setHeart(heart1, lives >= 1)
         setHeart(heart2, lives >= 2)
         setHeart(heart3, lives >= 3)
     }
 
-    // Set a heart to full or dimmed based on alive/dead state
     private fun setHeart(view: ImageView, isAlive: Boolean) {
         view.setImageResource(R.drawable.ic_heart_full)
         view.alpha = if (isAlive) 1f else 0.25f
     }
 
-    // Update the score label text
     override fun updateScore(score: Int) {
         tvScore.text = getString(R.string.score_label, score)
     }
 
-    // Show feedback when the player gets hit (toast + vibration)
     override fun showHitFeedback() {
         val toast = Toast.makeText(this, getString(R.string.hit_toast), Toast.LENGTH_SHORT)
         toast.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, computeTopToastYOffset())
@@ -263,14 +319,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         vibrateHit()
     }
 
-    // Compute toast Y offset so it appears below the status bar
     private fun computeTopToastYOffset(): Int {
         val insets = ViewCompat.getRootWindowInsets(root)
         val topInset = insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.top ?: 0
         return topInset + dpToPx(72)
     }
 
-    // Vibrate the phone shortly for hit feedback
     private fun vibrateHit() {
         val durationMs = 120L
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -290,7 +344,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
         }
     }
 
-    // Show game-over dialog with options to restart, go home, or exit
     override fun showGameOverDialog(finalScore: Int) {
         gameOverShown = true
         loop.stop()
@@ -300,19 +353,16 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks {
             .setMessage(getString(R.string.game_over_message, finalScore))
             .setCancelable(false)
             .setPositiveButton(getString(R.string.restart)) { _, _ ->
-                // Restart the game
                 gameOverShown = false
                 controller.resetGame()
                 loop.start()
                 updatePauseIcon()
             }
             .setNeutralButton(getString(R.string.home)) { _, _ ->
-                // Go back to main menu
                 startActivity(Intent(this, StartMenuActivity::class.java))
                 finish()
             }
             .setNegativeButton(getString(R.string.exit)) { _, _ ->
-                // Exit the app
                 finishAffinity()
             }
             .show()

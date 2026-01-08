@@ -7,4 +7,8 @@ object PrefsKeys {
     const val TICK_MS = "tick_ms"
     const val SPAWN_MS = "spawn_ms"
     const val LANGUAGE = "language"
+
+    // New Control Keys
+    const val ENABLE_BUTTONS = "enable_buttons"
+    const val ENABLE_TILT = "enable_tilt"
 }

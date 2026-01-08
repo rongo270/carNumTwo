@@ -11,6 +11,11 @@
     <string name="score_coming_soon">Score screen is coming soon</string>
 
     <string name="settings_title">Settings</string>
+
+    <string name="controls_title">Control Method</string>
+    <string name="ctrl_buttons">Buttons</string>
+    <string name="ctrl_tilt">Tilt</string>
+
     <string name="grid_size_title">Grid Size</string>
     <string name="grid_x">Columns</string>
     <string name="grid_y">Rows</string>
@@ -34,5 +39,4 @@
     <string name="speed_slow">Slow</string>
     <string name="speed_medium">Medium</string>
     <string name="speed_fast">Fast</string>
-
 </resources>

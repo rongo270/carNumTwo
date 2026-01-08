@@ -11,6 +11,11 @@
     <string name="score_coming_soon">מסך הניקוד יתווסף בקרוב</string>
 
     <string name="settings_title">הגדרות</string>
+
+    <string name="controls_title">שיטת שליטה</string>
+    <string name="ctrl_buttons">כפתורים</string>
+    <string name="ctrl_tilt">הטיה</string>
+
     <string name="grid_size_title">גודל לוח</string>
     <string name="grid_x">עמודות</string>
     <string name="grid_y">שורות</string>
@@ -34,5 +39,4 @@
     <string name="speed_slow">איטי</string>
     <string name="speed_medium">בינוני</string>
     <string name="speed_fast">מהיר</string>
-
 </resources>
