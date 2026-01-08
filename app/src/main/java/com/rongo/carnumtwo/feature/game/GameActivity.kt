@@ -17,7 +17,6 @@ import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -41,6 +40,7 @@ import kotlin.math.min
 
 class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListener {
 
+    // UI Views
     private lateinit var root: View
     private lateinit var grid: GridLayout
     private lateinit var btnLeft: ImageButton
@@ -54,6 +54,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var heart2: ImageView
     private lateinit var heart3: ImageView
 
+    // Game Engine Components
     private lateinit var controller: GameController
     private lateinit var renderer: GameRenderer
     private lateinit var loop: GameLoop
@@ -61,12 +62,13 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     private lateinit var state: GameState
     private lateinit var cells: Array<Array<ImageView>>
 
-    // --- Audio ---
+    // Audio Manager
     private lateinit var soundManager: SoundManager
 
+    // Game State Flag
     private var gameOverShown = false
 
-    // --- Sensors ---
+    // Sensors Variables
     private var sensorManager: SensorManager? = null
     private var accelerometer: Sensor? = null
     private var isTiltEnabled = false
@@ -78,7 +80,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
 
-        // Initialize Sound Manager
+        // 1. Initialize Sound Manager
         soundManager = SoundManager(this)
 
         // Bind views
@@ -97,16 +99,17 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
         applyBottomInsetsToRoot()
 
-        // Load settings
+        // 2. Load settings
         val settings = SettingsStorage(this).load()
         val cols = settings.gridX
         val rows = settings.gridY
-
-        // Use tickMs from settings as the starting speed
-        // spawnMs is ignored in this new logic
         val initialSpeed = settings.tickMs
 
+        // 3. Apply Audio Settings (Volume 0-100)
+        soundManager.setVolumes(settings.musicVolume, settings.sfxVolume)
+
         // --- Control Setup ---
+        // Configure Buttons Visibility
         if (settings.enableButtons) {
             btnLeft.visibility = View.VISIBLE
             btnRight.visibility = View.VISIBLE
@@ -115,6 +118,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             btnRight.visibility = View.GONE
         }
 
+        // Configure Tilt Sensor
         isTiltEnabled = settings.enableTilt
         if (isTiltEnabled) {
             sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -142,7 +146,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
         val bulletManager = BulletManager(shotCooldownMs = 200L)
 
-        // Pass initialSpeed to Controller for acceleration logic
+        // Initialize Controller with initial speed from settings
         controller = GameController(
             state = state,
             renderer = renderer,
@@ -153,11 +157,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         )
         controller.init()
 
-        // Start the single master loop
+        // Start the master game loop
         loop = GameLoop(controller)
         loop.start()
 
-        // Button Listeners
+        // Set Button Listeners
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
         btnFire.setOnClickListener { controller.shoot() }
@@ -170,6 +174,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         super.onResume()
         if (!gameOverShown) {
             loop.start()
+            // Resume music
             soundManager.startMusic()
         }
         updatePauseIcon()
@@ -186,6 +191,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         updatePauseIcon()
         loop.stop()
 
+        // Pause music when app goes background
         soundManager.pauseMusic()
 
         if (isTiltEnabled) {
@@ -196,7 +202,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     override fun onDestroy() {
         super.onDestroy()
         loop.stop()
-        soundManager.release()
+        soundManager.release() // Release audio resources
     }
 
     // --- Audio Implementation ---
@@ -212,13 +218,15 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         soundManager.playCoin()
     }
 
-    // --- Sensor Logic ---
+    // --- Sensor Logic (Tilt Control) ---
     override fun onSensorChanged(event: SensorEvent?) {
         if (event == null || controller.isPaused() || gameOverShown) return
 
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
             val x = event.values[0]
             val now = SystemClock.uptimeMillis()
+
+            // Throttle sensor events to avoid too fast movement
             if (now - lastTiltMoveTime > TILT_MOVE_COOLDOWN) {
                 if (x < -TILT_THRESHOLD) {
                     controller.moveRight()
@@ -241,9 +249,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         updatePauseIcon()
         renderer.render(state)
 
+        // Toggle music based on pause state
         if (!wasPaused) {
+            // Game is now PAUSED
             soundManager.pauseMusic()
         } else {
+            // Game is now RESUMED
             soundManager.startMusic()
         }
     }
@@ -252,6 +263,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         btnPause.setImageResource(if (controller.isPaused()) R.drawable.ic_play else R.drawable.ic_pause)
     }
 
+    // Handle Edge-to-Edge display
     private fun applyBottomInsetsToRoot() {
         val baseBottom = root.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -261,6 +273,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         }
     }
 
+    // Setup GridView dynamically
     private fun setupGrid(cols: Int, rows: Int) {
         grid.removeAllViews()
         grid.columnCount = cols
@@ -276,6 +289,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             }
         }
 
+        // Calculate cell size after layout measure
         grid.post {
             val margin = dpToPx(6)
             val availableW = max(0, grid.width - (cols * margin * 2))
@@ -298,6 +312,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
                 }
             }
 
+            // Center grid in container
             val contentW = cols * cellSize + cols * margin * 2
             val contentH = rows * cellSize + rows * margin * 2
             val padX = max(0, (grid.width - contentW) / 2)
@@ -313,6 +328,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         return (dp * resources.displayMetrics.density).toInt()
     }
 
+    // --- UI Update Callbacks ---
     override fun updateHearts(lives: Int) {
         setHeart(heart1, lives >= 1)
         setHeart(heart2, lives >= 2)

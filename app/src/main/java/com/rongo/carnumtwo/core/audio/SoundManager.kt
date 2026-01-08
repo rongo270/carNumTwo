@@ -14,45 +14,68 @@ class SoundManager(context: Context) {
     private val coinSoundId: Int
 
     private var mediaPlayer: MediaPlayer? = null
-    private var isMusicEnabled = true // אפשר לחבר להגדרות בעתיד
+
+    // Volume levels (Internal float used for playback)
+    private var musicVolume: Float = 0.125f // Default start approx 12.5% (50 slider * 0.25 scale)
+    private var sfxVolume: Float = 0.25f    // Default start 25% (50 slider * 0.5 scale)
+
+    // --- Volume Scaling Constants ---
+    // Even if slider is at 100%, Music will be 25% real volume
+    private val MUSIC_MAX_VOLUME_SCALE = 0.25f
+    // Even if slider is at 100%, SFX will be 50% real volume
+    private val SFX_MAX_VOLUME_SCALE = 0.50f
 
     init {
-        // הגדרת SoundPool לאפקטים קצרים (יעיל יותר למשחקים)
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(5) // עד 5 צלילים במקביל
+            .setMaxStreams(5)
             .setAudioAttributes(audioAttributes)
             .build()
 
-        // טעינת קבצי הסאונד מה-res/raw
         moveSoundId = soundPool.load(context, R.raw.snd_move, 1)
         explodeSoundId = soundPool.load(context, R.raw.snd_explode, 1)
         coinSoundId = soundPool.load(context, R.raw.snd_coin, 1)
 
-        // הגדרת מוזיקת רקע
         mediaPlayer = MediaPlayer.create(context, R.raw.music_background)
-        mediaPlayer?.isLooping = true // לופ אינסופי
-        mediaPlayer?.setVolume(0.5f, 0.5f) // עוצמה בינונית כדי לא להפריע לאפקטים
+        mediaPlayer?.isLooping = true
+    }
+
+    // Call this from Activity to update volumes dynamically
+    fun setVolumes(musicVolInt: Int, sfxVolInt: Int) {
+        // SFX: 0-100 -> Scaled down to max 50%
+        // Example: Slider 100 -> 1.0 * 0.5 = 0.5 (50% real volume)
+        // Example: Slider 50  -> 0.5 * 0.5 = 0.25 (25% real volume)
+        sfxVolume = (sfxVolInt / 100f) * SFX_MAX_VOLUME_SCALE
+
+        // MUSIC: 0-100 -> Scaled down to max 25%
+        musicVolume = (musicVolInt / 100f) * MUSIC_MAX_VOLUME_SCALE
+
+        // Update playing music immediately
+        if (mediaPlayer != null) {
+            mediaPlayer?.setVolume(musicVolume, musicVolume)
+        }
     }
 
     fun playMove() {
-        soundPool.play(moveSoundId, 1f, 1f, 0, 0, 1f)
+        soundPool.play(moveSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
     }
 
     fun playExplode() {
-        soundPool.play(explodeSoundId, 1f, 1f, 0, 0, 1f)
+        soundPool.play(explodeSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
     }
 
     fun playCoin() {
-        soundPool.play(coinSoundId, 1f, 1f, 0, 0, 1f)
+        soundPool.play(coinSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
     }
 
     fun startMusic() {
-        if (isMusicEnabled && mediaPlayer?.isPlaying == false) {
+        // Check if volume > 0 before starting
+        if (musicVolume > 0 && mediaPlayer?.isPlaying == false) {
+            mediaPlayer?.setVolume(musicVolume, musicVolume)
             mediaPlayer?.start()
         }
     }

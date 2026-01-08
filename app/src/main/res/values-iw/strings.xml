@@ -39,4 +39,8 @@
     <string name="speed_slow">איטי</string>
     <string name="speed_medium">בינוני</string>
     <string name="speed_fast">מהיר</string>
+
+    <string name="audio_title">שמע</string>
+    <string name="audio_music">מוזיקה</string>
+    <string name="audio_sfx">אפקטים</string>
 </resources>

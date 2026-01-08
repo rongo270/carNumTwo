@@ -7,5 +7,8 @@ data class AppSettings(
     val spawnMs: Long,
     val language: String,
     val enableButtons: Boolean,
-    val enableTilt: Boolean
+    val enableTilt: Boolean,
+    // Audio Volumes (0 to 100)
+    val musicVolume: Int,
+    val sfxVolume: Int
 )

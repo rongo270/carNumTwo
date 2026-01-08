@@ -181,7 +181,7 @@
             android:orientation="vertical"
             android:background="@drawable/bg_glass_panel"
             android:padding="20dp"
-            android:layout_marginBottom="32dp">
+            android:layout_marginBottom="24dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -230,6 +230,58 @@
                     android:background="@drawable/btn_secondary_bg"
                     android:textColor="@color/text_secondary"/>
             </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_glass_panel"
+            android:padding="20dp"
+            android:layout_marginBottom="32dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/audio_title"
+                android:textColor="@color/neon_blue"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/audio_music"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="8dp"/>
+
+            <SeekBar
+                android:id="@+id/seek_music"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="100"
+                android:progressTint="@color/neon_pink"
+                android:thumbTint="@color/white"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/audio_sfx"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="8dp"/>
+
+            <SeekBar
+                android:id="@+id/seek_sfx"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="100"
+                android:progressTint="@color/neon_pink"
+                android:thumbTint="@color/white"/>
+
         </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatButton

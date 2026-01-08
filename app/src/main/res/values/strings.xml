@@ -39,4 +39,8 @@
     <string name="speed_slow">Slow</string>
     <string name="speed_medium">Medium</string>
     <string name="speed_fast">Fast</string>
+
+    <string name="audio_title">Audio</string>
+    <string name="audio_music">Music</string>
+    <string name="audio_sfx">Sound FX</string>
 </resources>

@@ -8,7 +8,10 @@ object PrefsKeys {
     const val SPAWN_MS = "spawn_ms"
     const val LANGUAGE = "language"
 
-    // New Control Keys
     const val ENABLE_BUTTONS = "enable_buttons"
     const val ENABLE_TILT = "enable_tilt"
+
+    // Changed from ENABLE to VOLUME
+    const val VOLUME_MUSIC = "volume_music"
+    const val VOLUME_SFX = "volume_sfx"
 }

@@ -2,6 +2,7 @@ package com.rongo.carnumtwo.feature.settings
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -22,9 +23,13 @@ class SettingsActivity : BaseLocalizedActivity() {
     // Speed Variables
     private var selectedSpeedLevel = SpeedOptions.SpeedLevel.MEDIUM
 
-    // Control Variables (Can both be true)
+    // Control Variables
     private var isButtonsEnabled = true
     private var isTiltEnabled = false
+
+    // Audio Variables
+    private var musicVolume = 100
+    private var sfxVolume = 100
 
     // UI References
     private lateinit var tvValX: TextView
@@ -36,6 +41,10 @@ class SettingsActivity : BaseLocalizedActivity() {
 
     private lateinit var btnCtrlButtons: Button
     private lateinit var btnCtrlTilt: Button
+
+    // New SeekBars
+    private lateinit var seekMusic: SeekBar
+    private lateinit var seekSfx: SeekBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +63,9 @@ class SettingsActivity : BaseLocalizedActivity() {
         btnCtrlButtons = findViewById(R.id.btn_ctrl_buttons)
         btnCtrlTilt = findViewById(R.id.btn_ctrl_tilt)
 
+        seekMusic = findViewById(R.id.seek_music)
+        seekSfx = findViewById(R.id.seek_sfx)
+
         // Load existing values
         val savedSettings = storage.load()
         currentX = savedSettings.gridX
@@ -62,11 +74,20 @@ class SettingsActivity : BaseLocalizedActivity() {
         isButtonsEnabled = savedSettings.enableButtons
         isTiltEnabled = savedSettings.enableTilt
 
+        // Load Audio
+        musicVolume = savedSettings.musicVolume
+        sfxVolume = savedSettings.sfxVolume
+
+        // Initialize SeekBars
+        seekMusic.progress = musicVolume
+        seekSfx.progress = sfxVolume
+
         // Setup UI Sections
         setupGridXControl()
         setupGridYControl()
         setupSpeedButtons()
         setupControlButtons()
+        setupAudioSeekBars()
 
         // Apply Button Logic
         findViewById<Button>(R.id.btn_apply).setOnClickListener {
@@ -74,21 +95,36 @@ class SettingsActivity : BaseLocalizedActivity() {
         }
     }
 
-    // --- Controls Section ---
+    private fun setupAudioSeekBars() {
+        seekMusic.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                musicVolume = progress
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
 
+        seekSfx.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                sfxVolume = progress
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    // --- Controls Section ---
     private fun setupControlButtons() {
         updateControlVisuals()
 
         btnCtrlButtons.setOnClickListener {
             isButtonsEnabled = !isButtonsEnabled
-            // Ensure at least one is active (optional UX choice, but good practice)
             if (!isButtonsEnabled && !isTiltEnabled) isButtonsEnabled = true
             updateControlVisuals()
         }
 
         btnCtrlTilt.setOnClickListener {
             isTiltEnabled = !isTiltEnabled
-            // Ensure at least one is active
             if (!isButtonsEnabled && !isTiltEnabled) isTiltEnabled = true
             updateControlVisuals()
         }
@@ -100,7 +136,6 @@ class SettingsActivity : BaseLocalizedActivity() {
     }
 
     // --- Grid Section ---
-
     private fun setupGridXControl() {
         updateXDisplay()
         findViewById<Button>(R.id.btn_dec_x).setOnClickListener {
@@ -142,7 +177,6 @@ class SettingsActivity : BaseLocalizedActivity() {
     }
 
     // --- Speed Section ---
-
     private fun setupSpeedButtons() {
         updateSpeedVisuals()
 
@@ -168,7 +202,6 @@ class SettingsActivity : BaseLocalizedActivity() {
         setButtonStyle(btnSpeedFast, selectedSpeedLevel == SpeedOptions.SpeedLevel.FAST)
     }
 
-    // Helper to toggle visual style
     private fun setButtonStyle(btn: Button, isSelected: Boolean) {
         if (isSelected) {
             btn.setBackgroundResource(R.drawable.btn_primary_bg)
@@ -180,10 +213,8 @@ class SettingsActivity : BaseLocalizedActivity() {
     }
 
     private fun saveAndExit() {
-        // 1. Save Grid
         storage.saveGrid(currentX, currentY)
 
-        // 2. Save Timing
         val (tick, spawn) = when (selectedSpeedLevel) {
             SpeedOptions.SpeedLevel.SLOW -> Pair(SpeedOptions.SLOW_TICK_MS, SpeedOptions.SLOW_SPAWN_MS)
             SpeedOptions.SpeedLevel.MEDIUM -> Pair(SpeedOptions.MEDIUM_TICK_MS, SpeedOptions.MEDIUM_SPAWN_MS)
@@ -191,9 +222,8 @@ class SettingsActivity : BaseLocalizedActivity() {
             else -> Pair(SpeedOptions.MEDIUM_TICK_MS, SpeedOptions.MEDIUM_SPAWN_MS)
         }
         storage.saveTiming(tick, spawn)
-
-        // 3. Save Controls
         storage.saveControls(isButtonsEnabled, isTiltEnabled)
+        storage.saveAudio(musicVolume, sfxVolume) // Save integer volumes
 
         Toast.makeText(this, getString(R.string.saved), Toast.LENGTH_SHORT).show()
         finish()
