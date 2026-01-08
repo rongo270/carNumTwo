@@ -17,7 +17,7 @@ object GameDefaults {
     const val DEFAULT_LANGUAGE = "en"
 
     // --- Coin & Weapon Logic ---
-    const val COIN_SPAWN_CHANCE_PERCENT = 5
+    const val COIN_SPAWN_CHANCE_PERCENT = 20
     const val PENALTY_ON_DEATH = 25
 
     // Weapon Levels based on coins
