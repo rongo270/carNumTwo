@@ -4,7 +4,7 @@
     android:id="@+id/game_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_space_gradient"
+    android:background="@drawable/space"
     android:layoutDirection="ltr">
 
     <LinearLayout

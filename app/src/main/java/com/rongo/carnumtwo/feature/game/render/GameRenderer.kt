@@ -34,7 +34,7 @@ class GameRenderer(
         // Draw Chickens
         for (ch in state.chickens) {
             if (ch.row in 0 until rows && ch.col in 0 until cols) {
-                cells[ch.row][ch.col].setImageResource(R.drawable.ic_chicken)
+                cells[ch.row][ch.col].setImageResource(R.drawable.img_chicken_transparent)
             }
         }
 
@@ -60,7 +60,7 @@ class GameRenderer(
         val bottomRow = rows - 1
         if (bottomRow in 0 until rows && state.playerCol in 0 until cols) {
             val shipCell = cells[bottomRow][state.playerCol]
-            shipCell.setImageResource(R.drawable.ic_spaceship)
+            shipCell.setImageResource(R.drawable.img_spaceship_transparent)
             shipCell.alpha = playerAlpha(
                 nowMs = now,
                 invulnerableUntilMs = state.invulnerableUntilMs,

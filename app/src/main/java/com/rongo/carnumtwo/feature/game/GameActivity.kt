@@ -449,7 +449,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             Array(cols) {
                 val cell = AppCompatImageView(this)
                 cell.scaleType = ImageView.ScaleType.FIT_CENTER
-                cell.setBackgroundResource(R.drawable.bg_cell)
+                //cell.setBackgroundResource(R.drawable.bg_cell)
                 grid.addView(cell)
                 cell
             }
