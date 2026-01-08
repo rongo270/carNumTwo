@@ -9,23 +9,6 @@ import com.rongo.carnumtwo.feature.game.render.GameRenderer
 import kotlin.math.max
 import kotlin.random.Random
 
-interface GameUiCallbacks {
-    fun updateHearts(lives: Int)
-    fun updateScore(score: Int)
-    fun updateCoins(coins: Int)
-    fun showHitFeedback()
-    fun showGameOverDialog(finalScore: Int)
-
-    // Audio Callbacks
-    fun playSoundMove()
-    fun playSoundExplosion()
-    fun playSoundCoin()
-
-    // Shoot Cooldown Callbacks
-    fun onShootSuccess(cooldownMs: Long)
-    fun onShootFailed()
-}
-
 class GameController(
     private val state: GameState,
     private val renderer: GameRenderer,
@@ -44,7 +27,6 @@ class GameController(
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         ui.updateCoins(state.coinsCollected)
-        // Ensure button starts full (ready)
         ui.onShootSuccess(0)
         renderer.render(state)
     }
@@ -77,7 +59,6 @@ class GameController(
         ui.updateHearts(state.lives)
         ui.updateScore(state.score)
         ui.updateCoins(state.coinsCollected)
-        // Reset cooldown visual
         ui.onShootSuccess(0)
         renderer.render(state)
     }
@@ -192,11 +173,11 @@ class GameController(
     fun shoot() {
         if (state.paused) return
 
-        // Check if shot was allowed
         val shotFired = bulletManager.tryShoot(state) { }
 
         if (shotFired) {
             ui.onShootSuccess(GameDefaults.SHOOT_COOLDOWN_MS)
+            ui.playSoundShoot() // PLAY SHOOT SOUND
         } else {
             ui.onShootFailed()
         }
@@ -242,9 +223,20 @@ class GameController(
     }
 
     private fun collectCoin() {
+        // Check power BEFORE coin
+        val powerBefore = bulletManager.getCurrentPower(state.coinsCollected)
+
         state.coinsCollected += 1
         ui.updateCoins(state.coinsCollected)
         ui.playSoundCoin()
+
+        // Check power AFTER coin
+        val powerAfter = bulletManager.getCurrentPower(state.coinsCollected)
+
+        // If power increased, play UPGRADE SOUND
+        if (powerAfter > powerBefore) {
+            ui.playSoundUpgrade()
+        }
     }
 
     private fun handleHit(now: Long) {

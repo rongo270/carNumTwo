@@ -9,10 +9,13 @@ import com.rongo.carnumtwo.R
 class SoundManager(context: Context) {
 
     private val soundPool: SoundPool
+    // Sound IDs
     private val moveSoundId: Int
     private val explodeSoundId: Int
     private val coinSoundId: Int
-    private val lockedSoundId: Int // New ID
+    private val lockedSoundId: Int
+    private val shootSoundId: Int   // NEW
+    private val upgradeSoundId: Int // NEW
 
     private var mediaPlayer: MediaPlayer? = null
 
@@ -30,16 +33,17 @@ class SoundManager(context: Context) {
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(5)
+            .setMaxStreams(7) // Increased streams to allow more overlapping sounds
             .setAudioAttributes(audioAttributes)
             .build()
 
+        // Load all sounds
         moveSoundId = soundPool.load(context, R.raw.snd_move, 1)
         explodeSoundId = soundPool.load(context, R.raw.snd_explode, 1)
         coinSoundId = soundPool.load(context, R.raw.snd_coin, 1)
-
-        // Load Locked Sound
         lockedSoundId = soundPool.load(context, R.raw.snd_locked, 1)
+        shootSoundId = soundPool.load(context, R.raw.snd_shoot, 1)     // NEW
+        upgradeSoundId = soundPool.load(context, R.raw.snd_upgrade, 1) // NEW
 
         mediaPlayer = MediaPlayer.create(context, R.raw.music_background)
         mediaPlayer?.isLooping = true
@@ -54,6 +58,8 @@ class SoundManager(context: Context) {
         }
     }
 
+    // --- Play Functions ---
+
     fun playMove() {
         soundPool.play(moveSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
     }
@@ -66,10 +72,21 @@ class SoundManager(context: Context) {
         soundPool.play(coinSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
     }
 
-    // New function for locked sound
     fun playLocked() {
         soundPool.play(lockedSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
     }
+
+    fun playShoot() {
+        // Shoot sound might be frequent, priority can be slightly lower or same
+        soundPool.play(shootSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
+    }
+
+    fun playUpgrade() {
+        // Upgrade is important, play slightly louder or same
+        soundPool.play(upgradeSoundId, sfxVolume, sfxVolume, 0, 0, 1f)
+    }
+
+    // --- Music Control ---
 
     fun startMusic() {
         if (musicVolume > 0 && mediaPlayer?.isPlaying == false) {

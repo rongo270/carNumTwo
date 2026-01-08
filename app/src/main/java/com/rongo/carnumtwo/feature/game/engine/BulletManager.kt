@@ -9,7 +9,8 @@ class BulletManager(
     private val shotCooldownMs: Long
 ) {
 
-    private fun getCurrentPower(coins: Int): Int {
+    // Removed 'private' so Controller can check logic
+    fun getCurrentPower(coins: Int): Int {
         return when {
             coins >= GameDefaults.COINS_FOR_LVL_5 -> 5
             coins >= GameDefaults.COINS_FOR_LVL_4 -> 4
@@ -19,16 +20,12 @@ class BulletManager(
         }
     }
 
-    // Changed to return Boolean (True = Shot fired, False = Failed/Cooldown)
     fun tryShoot(state: GameState, onHit: () -> Unit): Boolean {
         if (state.paused) return false
 
         val now = SystemClock.uptimeMillis()
 
-        // Check Cooldown
         if (now - state.lastShotAtMs < shotCooldownMs) return false
-
-        // Update last shot time only if successful logic follows
 
         val startRow = state.rows - 2
         if (startRow < 0) return false
@@ -44,7 +41,7 @@ class BulletManager(
             if (power > 1) {
                 state.bullets.add(Bullet(row = startRow, col = col, power = power - 1))
             }
-            state.lastShotAtMs = now // Success
+            state.lastShotAtMs = now
             return true
         }
 
@@ -54,7 +51,7 @@ class BulletManager(
 
         // 3. Spawn Bullet
         state.bullets.add(Bullet(row = startRow, col = col, power = power))
-        state.lastShotAtMs = now // Success
+        state.lastShotAtMs = now
         return true
     }
 

@@ -67,10 +67,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
     private var gameOverShown = false
 
-    // Animator for shoot button cooldown
     private var cooldownAnimator: ValueAnimator? = null
 
-    // Sensors
     private var sensorManager: SensorManager? = null
     private var accelerometer: Sensor? = null
     private var isTiltEnabled = false
@@ -97,9 +95,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
 
-        // *** Set the Cooldown Background ***
         btnFire.setBackgroundResource(R.drawable.bg_fire_button_cooldown)
-        // Start full (Level 10000 = 100%)
         setButtonCooldownLevel(10000)
 
         applyBottomInsetsToRoot()
@@ -143,7 +139,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         setupGrid(cols, rows)
         renderer = GameRenderer(cells, rows, cols)
 
-        // Pass 3000ms cooldown here
         val bulletManager = BulletManager(shotCooldownMs = GameDefaults.SHOOT_COOLDOWN_MS)
 
         controller = GameController(
@@ -188,7 +183,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         loop.stop()
 
         soundManager.pauseMusic()
-        cooldownAnimator?.cancel() // Stop animation on pause
+        cooldownAnimator?.cancel()
 
         if (isTiltEnabled) {
             sensorManager?.unregisterListener(this)
@@ -214,18 +209,23 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         soundManager.playCoin()
     }
 
+    override fun playSoundShoot() {
+        soundManager.playShoot()
+    }
+
+    override fun playSoundUpgrade() {
+        soundManager.playUpgrade()
+    }
+
     // --- Cooldown UI Implementation ---
 
     override fun onShootSuccess(cooldownMs: Long) {
-        // Start animation from 0 (empty) to 10000 (full) over 3 seconds
         animateCooldown(cooldownMs)
     }
 
     override fun onShootFailed() {
-        // Locked sound
         soundManager.playLocked()
 
-        // Shake animation
         btnFire.animate()
             .translationX(10f)
             .setDuration(50)
@@ -255,7 +255,6 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     }
 
     private fun setButtonCooldownLevel(level: Int) {
-        // Access the LayerDrawable and then the ClipDrawable
         val layerDrawable = btnFire.background as? LayerDrawable
         val clipDrawable = layerDrawable?.findDrawableByLayerId(android.R.id.progress) as? ClipDrawable
         clipDrawable?.level = level
