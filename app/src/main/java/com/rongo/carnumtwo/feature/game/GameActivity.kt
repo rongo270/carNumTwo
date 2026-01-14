@@ -103,7 +103,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
-    // --- Activity Result Launcher for Map Picker (NEW) ---
+    // --- Activity Result Launcher for Map Picker ---
     private val mapPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val lat = result.data?.getDoubleExtra("lat", 0.0) ?: 0.0
@@ -112,8 +112,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             // Save the score with the picked location
             ScoreStorage(this).addScore(pendingName, pendingScore, lat, lon)
 
-            // Restart game logic
-            restartGameLogic()
+            // UPDATED FLOW: Show the regular menu instead of auto-restarting
+            showRegularGameOverDialog(pendingScore)
+        } else {
+            // If cancelled, just show the menu
+            showRegularGameOverDialog(pendingScore)
         }
     }
 
@@ -121,9 +124,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
 
+        // 1. Initialize Managers
         soundManager = SoundManager(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        // 2. Bind Views
         root = findViewById(R.id.game_root)
         grid = findViewById(R.id.game_grid)
         btnLeft = findViewById(R.id.btn_left)
@@ -137,10 +142,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         heart2 = findViewById(R.id.heart_2)
         heart3 = findViewById(R.id.heart_3)
 
+        // 3. Setup Visuals
         btnFire.setBackgroundResource(R.drawable.bg_fire_button_cooldown)
-        setButtonCooldownLevel(10000)
+        setButtonCooldownLevel(10000) // Start full
         applyBottomInsetsToRoot()
 
+        // 4. Load Settings
         val settings = SettingsStorage(this).load()
         val cols = settings.gridX
         val rows = settings.gridY
@@ -148,6 +155,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
 
         soundManager.setVolumes(settings.musicVolume, settings.sfxVolume)
 
+        // 5. Setup Controls (Buttons vs Tilt)
         if (settings.enableButtons) {
             btnLeft.visibility = View.VISIBLE
             btnRight.visibility = View.VISIBLE
@@ -162,8 +170,10 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         }
 
+        // 6. Check Location Permissions (for High Score)
         checkLocationPermission()
 
+        // 7. Initialize Game State
         state = GameState(
             cols = cols,
             rows = rows,
@@ -194,9 +204,11 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         )
         controller.init()
 
+        // 8. Start Game Loop
         loop = GameLoop(controller)
         loop.start()
 
+        // 9. Set Listeners
         btnLeft.setOnClickListener { controller.moveLeft() }
         btnRight.setOnClickListener { controller.moveRight() }
         btnFire.setOnClickListener { controller.shoot() }
@@ -204,6 +216,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         btnPause.setOnClickListener { togglePauseByUser() }
         updatePauseIcon()
     }
+
+    // --- Lifecycle Methods ---
 
     override fun onResume() {
         super.onResume()
@@ -224,6 +238,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         if (!controller.isPaused()) controller.setPaused(true)
         updatePauseIcon()
         loop.stop()
+
         soundManager.pauseMusic()
         cooldownAnimator?.cancel()
 
@@ -238,10 +253,12 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         soundManager.release()
     }
 
+    // --- Location Logic ---
     private fun checkLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
+            // Request permissions if not granted
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
@@ -257,13 +274,16 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                // If location found, save with coords. If null (gps off), save 0,0
                 val lat = location?.latitude ?: 0.0
                 val lon = location?.longitude ?: 0.0
                 storage.addScore(name, score, lat, lon)
             }.addOnFailureListener {
+                // Failed to get location, save without coords
                 storage.addScore(name, score, 0.0, 0.0)
             }
         } else {
+            // No permission, save without coords
             storage.addScore(name, score, 0.0, 0.0)
         }
     }
@@ -319,7 +339,8 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
     }
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) { }
 
-    // --- Game Flow ---
+    // --- Game Flow & Dialogs ---
+
     private fun togglePauseByUser() {
         controller.setPaused(true)
         updatePauseIcon()
@@ -398,7 +419,7 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
         btnPause.setImageResource(if (controller.isPaused()) R.drawable.ic_play else R.drawable.ic_pause)
     }
 
-    // --- High Score Logic (UPDATED) ---
+    // --- High Score Logic ---
 
     override fun showGameOverDialog(finalScore: Int) {
         gameOverShown = true
@@ -442,12 +463,14 @@ class GameActivity : BaseLocalizedActivity(), GameUiCallbacks, SensorEventListen
                 // *** CASE 2: Use GPS ***
                 saveScoreWithGPS(name, score)
                 dialog.dismiss()
-                restartGameLogic()
+                // UPDATED FLOW: Show the regular menu
+                showRegularGameOverDialog(score)
             } else {
                 // *** CASE 3: No Location ***
                 ScoreStorage(this).addScore(name, score, 0.0, 0.0)
                 dialog.dismiss()
-                restartGameLogic()
+                // UPDATED FLOW: Show the regular menu
+                showRegularGameOverDialog(score)
             }
         }
         dialog.show()
