@@ -48,4 +48,12 @@
     <string name="resume">Resume</string>
     <string name="exit_menu">Main Menu</string>
     <string name="final_score_label">Final Score</string>
+
+    <string name="new_high_score_title">NEW HIGH SCORE!</string>
+    <string name="enter_name_hint">Enter Your Name</string>
+    <string name="location_label">Location:</string>
+    <string name="radio_gps">Save GPS Location</string>
+    <string name="radio_no_gps">Don\'t Save Location</string>
+    <string name="btn_save_restart">SAVE &amp; RESTART</string>
+    <string name="default_player_name">Commander</string>
 </resources>

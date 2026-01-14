@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_card"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:text="@string/new_high_score_title"
+        android:textColor="@color/neon_blue"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/et_player_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/enter_name_hint"
+        android:textColor="@color/white"
+        android:textColorHint="#80FFFFFF"
+        android:backgroundTint="@color/neon_pink"
+        android:inputType="textPersonName"
+        android:maxLines="1"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:text="@string/location_label"
+        android:textColor="@color/text_secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="viewStart"/>
+
+    <RadioGroup
+        android:id="@+id/radio_group_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
+
+        <RadioButton
+            android:id="@+id/rb_current_location"
+            android:text="@string/radio_gps"
+            android:textColor="@color/white"
+            android:checked="true"
+            android:buttonTint="@color/neon_blue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <RadioButton
+            android:id="@+id/rb_pick_on_map"
+            android:text="Pick on Map"
+            android:textColor="@color/white"
+            android:buttonTint="@color/neon_blue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <RadioButton
+            android:id="@+id/rb_no_location"
+            android:text="@string/radio_no_gps"
+            android:textColor="@color/white"
+            android:buttonTint="@color/neon_blue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/btn_save_score"
+        android:text="@string/btn_save_restart"
+        android:background="@drawable/btn_primary_bg"
+        android:textColor="@color/white"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"/>
+
+</LinearLayout>

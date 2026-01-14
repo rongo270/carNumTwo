@@ -48,4 +48,12 @@
     <string name="resume">המשך משחק</string>
     <string name="exit_menu">תפריט ראשי</string>
     <string name="final_score_label">ניקוד סופי</string>
+
+    <string name="new_high_score_title">שיא חדש!</string>
+    <string name="enter_name_hint">הכנס את שמך</string>
+    <string name="location_label">מיקום:</string>
+    <string name="radio_gps">שמור מיקום GPS</string>
+    <string name="radio_no_gps">ללא שמירת מיקום</string>
+    <string name="btn_save_restart">שמור והתחל מחדש</string>
+    <string name="default_player_name">מפקד</string>
 </resources>

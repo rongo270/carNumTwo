@@ -9,6 +9,7 @@ import com.rongo.carnumtwo.R
 import com.rongo.carnumtwo.core.storage.SettingsStorage
 import com.rongo.carnumtwo.core.ui.BaseLocalizedActivity
 import com.rongo.carnumtwo.feature.game.GameActivity
+import com.rongo.carnumtwo.feature.score.ScoreActivity
 import com.rongo.carnumtwo.feature.settings.SettingsActivity
 
 class StartMenuActivity : BaseLocalizedActivity() {
@@ -19,37 +20,34 @@ class StartMenuActivity : BaseLocalizedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Inflate the start menu layout
         setContentView(R.layout.activity_start_menu)
 
-        // Storage helper for loading settings
         storage = SettingsStorage(this)
 
-        // Bind summary views
         tvSummaryGrid = findViewById(R.id.tv_summary_grid)
         tvSummarySpeed = findViewById(R.id.tv_summary_speed)
 
-        // Start the game
+        // Start Game
         findViewById<Button>(R.id.btn_start).setOnClickListener {
             startActivity(Intent(this, GameActivity::class.java))
         }
 
-        // Open settings screen
+        // Open Settings
         findViewById<Button>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        // Placeholder score button
+        // Open High Scores (UPDATED)
         findViewById<Button>(R.id.btn_score).setOnClickListener {
-            Toast.makeText(this, getString(R.string.score_coming_soon), Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, ScoreActivity::class.java))
         }
 
-        // Exit the app
+        // Exit App
         findViewById<Button>(R.id.btn_exit).setOnClickListener {
             finishAffinity()
         }
 
-        // Toggle language (en/he) and recreate the activity
+        // Toggle Language
         findViewById<Button>(R.id.btn_language).setOnClickListener {
             toggleLanguage()
         }
@@ -57,11 +55,9 @@ class StartMenuActivity : BaseLocalizedActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh summary when returning from other screens
         updateSummary()
     }
 
-    // Update the summary text based on saved settings
     private fun updateSummary() {
         val s = storage.load()
         tvSummaryGrid.text = getString(R.string.summary_grid, s.gridX, s.gridY)
@@ -72,7 +68,6 @@ class StartMenuActivity : BaseLocalizedActivity() {
         )
     }
 
-    // Switch between English and Hebrew and reload UI
     private fun toggleLanguage() {
         val current = storage.load().language
         val next = if (current == "en") "he" else "en"

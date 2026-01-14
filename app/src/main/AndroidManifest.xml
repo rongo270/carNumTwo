@@ -4,6 +4,10 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true" />
 
     <application
@@ -16,6 +20,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarNumTwo"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${mapsApiKey}" />
+
+        <activity android:name=".feature.game.LocationPickerActivity"
+            android:screenOrientation="portrait"/>
 
         <activity
             android:name=".feature.menu.StartMenuActivity"
@@ -34,6 +45,11 @@
         <activity
             android:name=".feature.game.GameActivity"
             android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".feature.score.ScoreActivity"
+            android:screenOrientation="portrait"/>
+
     </application>
 
 </manifest>

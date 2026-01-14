@@ -17,14 +17,14 @@ object GameDefaults {
     const val DEFAULT_LANGUAGE = "en"
 
     // --- Coin & Weapon Logic ---
-    const val COIN_SPAWN_CHANCE_PERCENT = 20
+    const val COIN_SPAWN_CHANCE_PERCENT = 60
     const val PENALTY_ON_DEATH = 25
 
     // Weapon Levels based on coins
     const val COINS_FOR_LVL_2 = 15
-    const val COINS_FOR_LVL_3 = 50
-    const val COINS_FOR_LVL_4 = 100
-    const val COINS_FOR_LVL_5 = 200
+    const val COINS_FOR_LVL_3 = 30
+    const val COINS_FOR_LVL_4 = 50
+    const val COINS_FOR_LVL_5 = 100
 
     // --- Cooldown Logic ---
     const val SHOOT_COOLDOWN_MS = 3000L // 3 Seconds cooldown
